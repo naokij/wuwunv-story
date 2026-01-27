@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+
+# Python 编译产物
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+
+# 虚拟环境
+venv/
+.venv/
+env/
+.env/
+
+# 编辑器配置
+.idea/
+.vscode/
+
+# 测试 / 工具缓存
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 日志与临时文件
+*.log
+*.tmp
+*~
+
+# 原始录屏文件（保留处理后的音频与封面）
+*录屏*.mp4
+*录屏*.MP4
+*录屏*.mov
+*录屏*.MOV
+

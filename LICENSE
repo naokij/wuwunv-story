@@ -1,0 +1,23 @@
+本仓库包含两类内容，适用不同授权条款：
+
+1. 文本内容
+   包括但不限于：
+   - 所有故事 `.md` 文件
+   - `设定文档` 等设定相关文档
+   - 图片、音频、视频等多媒体内容
+
+   授权条款：
+   - 版权归作者 Jiang Le 所有。
+   - 采用 Creative Commons BY-NC-SA 4.0（署名-非商业性使用-相同方式共享）协议授权。
+   - 协议全文参见：https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+2. 代码文件
+   包括但不限于：
+   - `scripts/` 目录下的所有 `.py` 等源代码文件
+
+   授权条款：
+   - 版权归作者 Jiang Le 所有。
+   - 采用 GNU General Public License v3.0（GPL-3.0）授权。
+   - 具体条款见 `scripts/LICENSE`。
+
+除非另有特别说明，本仓库内容均遵循上述相应条款。
