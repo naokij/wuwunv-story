@@ -22,6 +22,8 @@
 | 10 | <img src="audio/thumbnails/10-巫巫女的春日野餐_thumb.jpeg" width="80" /> | [巫巫女的春日野餐](10-巫巫女的春日野餐.md) | [audio/10-巫巫女的春日野餐.mp3](audio/10-巫巫女的春日野餐.mp3) |
 | 11 | <img src="audio/thumbnails/11-雨中的小木屋茶会_thumb.jpg" width="80" /> | [雨中的小木屋茶会](11-雨中的小木屋茶会.md) | [audio/11-雨中的小木屋茶会.mp3](audio/11-雨中的小木屋茶会.mp3) |
 | 12 | <img src="audio/thumbnails/12-莉莉的新本领_thumb.jpg" width="80" /> | [莉莉的新本领](12-莉莉的新本领.md) | [audio/12-莉莉的新本领.mp3](audio/12-莉莉的新本领.mp3) |
+| 13 | <img src="audio/thumbnails/13-莉莉和小时候的巫巫女_thumb.jpg" width="80" /> | [莉莉和小时候的巫巫女](13-莉莉和小时候的巫巫女.md) | [audio/13-莉莉和小时候的巫巫女.mp3](audio/13-莉莉和小时候的巫巫女.mp3) |
+| 14 | <img src="audio/thumbnails/14-寒假里的好朋友欣欣_thumb.jpg" width="80" /> | [寒假里的好朋友欣欣](14-寒假里的好朋友欣欣.md) | [audio/14-寒假里的好朋友欣欣.mp3](audio/14-寒假里的好朋友欣欣.mp3) |
 
 ## 关于创作方式
 
