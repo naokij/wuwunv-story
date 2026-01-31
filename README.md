@@ -30,6 +30,7 @@
 | 18 | <img src="audio/thumbnails/18-海上日出的金色光芒_thumb.jpg" width="80" /> | [海上日出的金色光芒](18-海上日出的金色光芒.md) | [audio/18-海上日出的金色光芒.mp3](audio/18-海上日出的金色光芒.mp3) |
 | 19 | <img src="audio/thumbnails/19-船舱里的秘密乐队_thumb.jpg" width="80" /> | [船舱里的秘密乐队](19-船舱里的秘密乐队.md) | [audio/19-船舱里的秘密乐队.mp3](audio/19-船舱里的秘密乐队.mp3) |
 | 20 | <img src="audio/20-欣欣的冬日小秘密.jpg" width="80" /> | [欣欣的冬日小秘密](20-欣欣的冬日小秘密.md) | [audio/20-欣欣的冬日小秘密.mp3](audio/20-欣欣的冬日小秘密.mp3) |
+| 21 | <img src="audio/21-莉莉和欣欣的小秘密.jpg" width="80" /> | [莉莉和欣欣的小秘密](21-莉莉和欣欣的小秘密.md) | [audio/21-莉莉和欣欣的小秘密.mp3](audio/21-莉莉和欣欣的小秘密.mp3) |
 
 ## 关于创作方式
 
