@@ -11,7 +11,9 @@ __pycache__/
 venv/
 .venv/
 env/
-.env/
+
+# 环境变量文件（保留 .env.example）
+.env
 
 # 编辑器配置
 .idea/
