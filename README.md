@@ -32,6 +32,7 @@
 | 20 | <img src="audio/thumbnails/20-欣欣的冬日小秘密_thumb.jpg" width="80" /> | [欣欣的冬日小秘密](20-欣欣的冬日小秘密.md) | [audio/20-欣欣的冬日小秘密.mp3](audio/20-欣欣的冬日小秘密.mp3) |
 | 21 | <img src="audio/thumbnails/21-莉莉和欣欣的小秘密_thumb.jpg" width="80" /> | [莉莉和欣欣的小秘密](21-莉莉和欣欣的小秘密.md) | [audio/21-莉莉和欣欣的小秘密.mp3](audio/21-莉莉和欣欣的小秘密.mp3) |
 | 22 | <img src="audio/thumbnails/22-莉莉和欣欣的森林绘本计划_thumb.jpg" width="80" /> | [莉莉和欣欣的森林绘本计划](22-莉莉和欣欣的森林绘本计划.md) | [audio/22-莉莉和欣欣的森林绘本计划.mp3](audio/22-莉莉和欣欣的森林绘本计划.mp3) |
+| 23 | <img src="audio/thumbnails/23-森林小动物的音乐狂欢日_thumb.jpeg" width="80" /> | [森林小动物的音乐狂欢日](23-森林小动物的音乐狂欢日.md) | [audio/23-森林小动物的音乐狂欢日.mp3](audio/23-森林小动物的音乐狂欢日.mp3) |
 
 ## 关于创作方式
 

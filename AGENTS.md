@@ -9,7 +9,7 @@
 **项目用途**：这是一个围绕「巫巫女」展开的睡前与静心故事合集，适合大人和小朋友一起听。故事发生在一片住着巫巫女的森林里，包含温馨治愈的故事文本、封面图片、音频文件以及配套的音频处理工具。
 
 **主要内容**：
-- 22篇已完成的睡前故事（Markdown 格式）
+- 23篇已完成的睡前故事（Markdown 格式）
 - 配套的封面图片和音频文件（MP3）
 - 音频处理工具脚本（Python）
 - 完整的世界观设定文档
@@ -24,21 +24,28 @@
 
 ```
 wuwunv/
-├── *.md                    # 故事文本文件（22篇）
+├── *.md                    # 故事文本文件（23篇）
 ├── 设定文档.md              # 完整的世界观设定（核心参考）
 ├── README.md               # 项目说明文档
 ├── README_音频处理.md       # 音频工具使用说明
 ├── requirements.txt        # Python 依赖
+├── .env                    # API 密钥配置（不提交到 Git）
 ├── audio/                  # 音频和图片目录
 │   ├── *.mp3              # 故事音频文件
 │   ├── *.jpeg/.jpg        # 封面图片
-│   └── thumbnails/        # 缩略图
-└── scripts/               # 音频处理工具脚本
-    ├── process_audio.py           # 主要音频处理工具
+│   ├── thumbnails/        # 缩略图
+│   └── references/        # 角色参考图（用于封面生成）
+└── scripts/               # 音频处理和自动化工具脚本
+    ├── auto_generate_story.py     # 自动生成故事（音频+封面）
+    ├── volcengine_api.py          # 火山引擎 API 封装
+    ├── config.py                  # 项目配置
+    ├── get_tts_voices.py          # TTS 音色查询工具
+    ├── process_audio.py           # 音频处理工具
     ├── add_metadata_to_existing.py # 为已有音频添加元数据
     ├── batch_add_metadata.py      # 批量添加元数据
     ├── generate_thumbnails.py     # 生成缩略图
     ├── verify_audio.py            # 验证音频元数据
+    ├── auto_generate_story_README.md # 自动生成工具说明
     └── README.md                  # 脚本使用说明
 ```
 
@@ -81,6 +88,54 @@ wuwunv/
 - **封面图片**：同名的 `.jpeg` 或 `.jpg` 文件
 
 ### 脚本工具
+
+#### 自动化工具（推荐使用）
+
+**auto_generate_story.py** ⭐️主要工具
+- 功能：从 Markdown 故事文件自动生成音频、封面和元数据
+- 特性：
+  - 集成火山引擎 TTS（文本转语音）
+  - 集成即梦 AI（封面图片生成）
+  - 支持自定义封面提示词（frontmatter）
+  - 支持多角色参考图（最多10张）
+  - 自动嵌入元数据到 MP3 文件
+- **文档**：[scripts/auto_generate_story_README.md](scripts/auto_generate_story_README.md)
+- **使用示例**：
+  ```bash
+  # 生成完整故事（音频+封面）
+  python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md"
+  
+  # 只生成封面（音频必须已存在）
+  python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md" --cover-only
+  
+  # 批量生成所有故事
+  python scripts/auto_generate_story.py --all
+  ```
+
+**volcengine_api.py**
+- 功能：火山引擎 API 封装库
+- 包含：
+  - `VolcEngineTTS` 类：TTS 音频合成
+  - `VolcEngineJimeng` 类：即梦 AI 图片生成
+- 支持复刻音色和标准音色
+
+**config.py**
+- 功能：项目配置文件
+- 配置项：
+  - API 密钥（Access Key、Secret Key、APP ID、Access Token）
+  - TTS 音色和模型设置
+  - 封面生成参数（宽高比、质量、参考权重）
+  - 角色配置（基础提示词、参考图路径）
+
+**get_tts_voices.py**
+- 功能：TTS 音色查询工具
+- 用途：查找和选择合适的 TTS 音色
+- 使用示例：
+  ```bash
+  python scripts/get_tts_voices.py
+  ```
+
+#### 传统工具（备用）
 
 - **process_audio.py**：从录屏视频中提取音频、去除静音、添加淡入效果、嵌入元数据
 - **add_metadata_to_existing.py**：为已有 MP3 文件添加或更新元数据
@@ -160,19 +215,91 @@ wuwunv/
 - 独立之光（独立成长）
 - 接纳之光（接纳不完美的自己）
 - 合作之光（沟通、尊重彼此的想法）
+- 快乐音乐之光（纯粹开心的音乐、心发出的声音）
 
 ---
 
 ## 技术工具使用
 
-### 环境要求
+### 自动化工具（推荐）
 
+#### 1. 环境配置
+
+**安装依赖**：
+```bash
+pip install -r requirements.txt
+```
+
+**配置 API 密钥**：
+在 `.env` 文件中配置火山引擎 API 密钥：
+
+**方式 A：Access Key + Secret Key**
+```env
+VOLCENGINE_ACCESS_KEY=your_access_key
+VOLCENGINE_SECRET_KEY=your_secret_key
+```
+
+**方式 B：APP ID + Access Token**
+```env
+VOLCENGINE_APP_ID=your_app_id
+VOLCENGINE_ACCESS_TOKEN=your_access_token
+```
+
+**准备角色参考图**：
+在 `audio/references/` 目录中准备角色参考图：
+- `巫巫女_reference.jpg` - 巫巫女的角色形象
+- `莉莉_reference.jpg` - 莉莉的角色形象
+- `欣欣_reference.jpg` - 欣欣的角色形象
+
+#### 2. 故事文件格式
+
+故事文件支持 YAML frontmatter 来自定义封面生成：
+
+```markdown
+---
+title: 故事标题
+cover_prompt: "自定义的封面提示词，描述画面场景和风格"
+cover_characters:
+  - 巫巫女
+  - 莉莉
+---
+
+# 故事正文
+
+这里写故事内容...
+```
+
+#### 3. 自动生成故事
+
+**生成完整故事（音频 + 封面）**：
+```bash
+python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md"
+```
+
+**只生成封面（音频必须已存在）**：
+```bash
+python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md" --cover-only
+```
+
+**批量生成所有故事**：
+```bash
+python scripts/auto_generate_story.py --all
+```
+
+**工作流程**：
+1. 读取故事文件和 frontmatter
+2. 调用火山引擎 TTS 生成音频
+3. 调用即梦 AI 生成封面（支持多角色参考图）
+4. 将标题、内容和封面嵌入 MP3 元数据
+
+### 传统工具（备用）
+
+**环境要求**：
 - Python 3.12+
 - ffmpeg（用于音频处理）
 - mutagen（用于 MP3 元数据处理）
 
-### 安装依赖
-
+**安装依赖**：
 ```bash
 # 安装 Python 依赖
 pip install -r requirements.txt
@@ -181,19 +308,10 @@ pip install -r requirements.txt
 brew install ffmpeg
 ```
 
-### 音频处理流程
-
 **从录屏生成音频**：
 ```bash
 python scripts/process_audio.py <录屏文件>
 ```
-
-工具会自动：
-1. 从录屏视频中提取音频
-2. 检测并去除前后静音
-3. 添加淡入效果
-4. 查找同名封面图片和故事文件
-5. 将标题、简介和全文嵌入 MP3 元数据
 
 **为已有音频添加元数据**：
 ```bash
@@ -247,6 +365,7 @@ python scripts/verify_audio.py <MP3文件>
 | 20 | 欣欣的冬日小秘密 | 独立、成长 | 独立之光 |
 | 21 | 莉莉和欣欣的小秘密 | 接纳、勇敢 | 接纳之光 |
 | 22 | 莉莉和欣欣的森林绘本计划 | 合作、沟通 | 合作之光 |
+| 23 | 森林小动物的音乐狂欢日 | 音乐、快乐、合作 | 快乐音乐之光 |
 
 **游轮系列**（第15-19篇）：春节期间的五天四晚游轮旅行，连续的故事线，主题是勇敢探索、珍惜友谊、耐心等待、团队合作。
 
@@ -254,7 +373,7 @@ python scripts/verify_audio.py <MP3文件>
 
 ## 工作流程
 
-### 创作新故事
+### 创作新故事（自动化方式）⭐️推荐
 
 1. **阅读设定文档**：确保了解角色、场景、规则等核心设定
 2. **确定主题**：选择一个温馨治愈的主题（如情绪教育、友谊、成长等）
@@ -264,20 +383,31 @@ python scripts/verify_audio.py <MP3文件>
    - 保持角色性格一致
    - 从第02篇起，结尾必须包含完整的甜梦场景
    - 添加"给妈妈的小提示"
-5. **生成音频**：使用豆包 App 的"温柔桃子"音色进行 TTS 合成
-6. **处理音频**：使用 `scripts/process_audio.py` 处理音频
-7. **验证结果**：使用 `scripts/verify_audio.py` 验证元数据和封面
-
-### 处理音频
-
-1. 准备录屏文件（`.mov` 或 `.mp4`）
-2. 确保封面图片已放在 `audio/` 目录
-3. 确保故事文件已放在项目根目录
-4. 运行处理脚本：
+   - 添加 frontmatter（可选）来自定义封面
+5. **配置环境**：
+   - 配置 `.env` 文件中的 API 密钥
+   - 准备角色参考图（`audio/references/` 目录）
+6. **自动生成**：
    ```bash
-   python scripts/process_audio.py <录屏文件>
+   python scripts/auto_generate_story.py "故事文件名.md"
    ```
-5. 验证处理结果：
+7. **验证结果**：检查生成的 MP3 文件是否包含正确的封面和元数据
+
+### 创作新故事（传统方式）
+
+1. **阅读设定文档**：确保了解角色、场景、规则等核心设定
+2. **确定主题**：选择一个温馨治愈的主题
+3. **规划情节**：按照"开头-中间-结尾"的结构
+4. **编写故事**：
+   - 使用温馨治愈的语言
+   - 保持角色性格一致
+   - 从第02篇起，结尾必须包含完整的甜梦场景
+   - 添加"给妈妈的小提示"
+5. **生成音频**：使用豆包 App 的"温柔桃子"音色进行 TTS 合成
+6. **处理音频**：
+   - 录制豆包 App 播放过程
+   - 使用 `scripts/process_audio.py` 处理录屏
+7. **验证结果**：
    ```bash
    python scripts/verify_audio.py <生成的MP3文件>
    ```
@@ -301,15 +431,29 @@ python scripts/verify_audio.py <MP3文件>
 1. **任何新故事创作前必须先阅读 `设定文档.md`**
 2. **第02篇起每篇故事必须包含甜梦场景**
 3. **保持角色设定和故事风格的一致性**
-4. **音频处理工具使用前确保已安装 ffmpeg 和 Python 依赖**
-5. **文件命名要遵循规范，便于工具自动匹配**
+4. **推荐使用自动化工具 `auto_generate_story.py` 生成音频和封面**
+5. **自动化工具需要配置 API 密钥和角色参考图**
+6. **文件命名要遵循规范，便于工具自动匹配**
+7. **使用 `--cover-only` 参数可以跳过 API 请求，直接嵌入现有封面**
 
 ---
 
 ## 项目版本信息
 
 - 创建日期：2026年1月26日
-- 最后更新：2026年2月1日
-- 当前故事数：22篇
+- 最后更新：2026年2月2日
+- 当前故事数：23篇
 - 维护者：巫巫女故事作者
 - Git 仓库：git@github.com-naokij:naokij/wuwunv-story.git
+
+## 更新日志
+
+### 2026年2月2日
+- 新增自动化工具 `auto_generate_story.py`，支持自动生成音频和封面
+- 集成火山引擎 TTS 和即梦 AI
+- 支持自定义封面提示词和多角色参考图
+- 新增 `volcengine_api.py` API 封装库
+- 新增 `config.py` 配置文件
+- 新增 `get_tts_voices.py` TTS 音色查询工具
+- 修复封面嵌入逻辑，正确处理 MP3 已有封面时的情况
+- 更新 `AGENTS.md` 文档
