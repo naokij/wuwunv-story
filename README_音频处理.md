@@ -1,30 +1,86 @@
 # 音频处理工具使用说明
 
-这个工具可以帮助你处理从 iPhone 录屏中提取的音频文件。
+这个工具集包含了音频处理、元数据管理、TTS 生成和 AI 封面生成等功能。
 
 ## 功能
+
+### 新功能（推荐使用）
+
+1. **音频生成**: 使用 MiniMax TTS API 从故事文本生成音频
+2. **封面生成**: 使用火山引擎即梦 AI 从提示词生成封面
+3. **一键生成**: 自动生成音频和封面
+
+### 传统功能（备用）
 
 1. **提取音频**: 从录屏文件（.mov, .mp4 等）中提取音频
 2. **去除空白**: 自动检测并去除音频前后的静音部分
 3. **嵌入封面**: 自动查找同名图片文件或使用指定的封面图片
 4. **嵌入元数据**: 自动查找同名故事文件，将标题、简介和全文嵌入到 MP3 元数据中
 
-## 安装依赖
+## 快速开始
 
-### 1. 安装 ffmpeg
+### 1. 环境配置
 
-macOS:
-```bash
-brew install ffmpeg
-```
-
-### 2. 安装 Python 依赖
-
+**安装依赖**：
 ```bash
 pip install -r requirements.txt
 ```
 
-## 使用方法
+**配置 API 密钥**（在 `.env` 文件中）：
+```env
+# MiniMax TTS 配置
+MINIMAX_API_KEY=your_minimax_api_key
+MINIMAX_VOICE_ID=wuwunv_gentle_taozi
+MINIMAX_EMOTION=gentle
+
+# 火山引擎即梦 AI 配置
+VOLCENGINE_ACCESS_KEY=your_access_key
+VOLCENGINE_SECRET_KEY=your_secret_key
+VOLCENGINE_APP_ID=your_app_id
+```
+
+**准备角色参考图**：
+在 `audio/references/` 目录中放置角色参考图：
+- `巫巫女_reference.jpg`
+- `莉莉_reference.jpg`
+- `欣欣_reference.jpg`
+
+### 2. 使用新脚本
+
+**一键生成音频和封面**：
+```bash
+python scripts/generate_story.py "01-巫巫女的心变了.md"
+```
+
+**单独生成音频**：
+```bash
+python scripts/generate_audio.py "01-巫巫女的心变了.md"
+```
+
+**单独生成封面**：
+```bash
+python scripts/generate_cover.py "01-巫巫女的心变了.md"
+```
+
+### 3. 故事文件格式
+
+故事文件支持 YAML frontmatter 来自定义封面生成：
+
+```markdown
+---
+title: 故事标题
+cover_prompt: "自定义的封面提示词，描述画面场景和风格"
+cover_characters:
+  - 巫巫女
+  - 莉莉
+---
+
+# 故事正文
+
+这里写故事内容...
+```
+
+## 传统功能使用方法（备用）
 
 ### 基本用法（自动查找封面和故事）
 
@@ -127,10 +183,21 @@ python scripts/batch_add_metadata.py --dir <目录路径>
 
 ## 注意事项
 
-1. 确保 `ffmpeg` 已正确安装并可在命令行中使用
-2. 录屏文件可以是 `.mov`, `.mp4` 等常见视频格式
-3. 静音检测阈值设置为 -30dB，持续 0.5 秒以上会被识别为静音
-4. 如果找不到封面或故事文件，工具会跳过相应步骤，但不会报错
+1. 确保 `ffmpeg` 已正确安装并可在命令行中使用（仅传统功能需要）
+2. MiniMax TTS API 速率限制为 10 次/分钟，脚本已自动处理
+3. 火山引擎封面生成需要 5-10 分钟，请耐心等待
+4. 录屏文件可以是 `.mov`, `.mp4` 等常见视频格式
+5. 静音检测阈值设置为 -30dB，持续 0.5 秒以上会被识别为静音
+6. 如果找不到封面或故事文件，工具会跳过相应步骤，但不会报错
+
+## 更新日志
+
+### 2026年2月3日
+- 新增 MiniMax TTS 音频生成功能
+- 新增火山引擎即梦 AI 封面生成功能
+- 新增整合脚本 `generate_story.py`
+- 移除豆包 TTS 相关代码
+- 更新所有文档
 
 ## 验证元数据和封面
 

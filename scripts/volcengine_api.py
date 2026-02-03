@@ -2,212 +2,26 @@
 # -*- coding: utf-8 -*-
 """
 火山引擎 API 调用模块
-包括豆包 TTS 和即梦 AI 的 API 封装
+即梦 AI 的 API 封装，用于封面生成
 """
 
-import hmac
-import hashlib
-import base64
 import json
 import time
+import base64
 import requests
-import os
 from typing import Optional, Dict, Any
 from pathlib import Path
-from collections import OrderedDict
 
 try:
     from volcengine.visual.VisualService import VisualService
     VOLCENGINE_SDK_AVAILABLE = True
 except ImportError:
     VOLCENGINE_SDK_AVAILABLE = False
-    print("警告: 火山引擎 SDK 未安装，某些功能可能不可用")
-
-
-class VolcEngineTTS:
-    """豆包 TTS API 客户端"""
-
-    def __init__(self, access_key: str = "", secret_key: str = "", app_id: str = "", access_token: str = ""):
-        """
-        初始化 TTS 客户端
-
-        Args:
-            access_key: 火山引擎 Access Key（方式 A）
-            secret_key: 火山引擎 Secret Key（方式 A）
-            app_id: 应用 ID（方式 B 必需）
-            access_token: Access Token（方式 B 必需）
-        """
-        # 方式 A：Access Key + Secret Key
-        self.access_key = access_key
-        self.secret_key = secret_key
-
-        # 方式 B：APP ID + Access Token
-        self.app_id = app_id
-        self.access_token = access_token
-
-        # 判断是否使用方式 B（APP ID + Access Token）
-        self.use_appid_token = bool(app_id and access_token)
-
-        # 判断是否是复刻音色（音色 ID 以 S_ 开头）
-        self.is_cloned_voice = False
-        if access_token and (app_id and access_token):
-            pass
-
-        self.api_url = "https://openspeech.bytedance.com/api/v1/tts"
-
-    def _generate_signature(self, request_body: str) -> str:
-        """生成 API 签名（方式 A）"""
-        hmac_obj = hmac.new(
-            self.secret_key.encode('utf-8'),
-            request_body.encode('utf-8'),
-            hashlib.sha256
-        )
-        return base64.b64encode(hmac_obj.digest()).decode('utf-8')
-
-    def synthesize_speech(
-        self,
-        text: str,
-        voice_type: str,
-        encoding: str = "mp3",
-        speed_ratio: float = 1.0,
-        volume_ratio: float = 1.0,
-        model_type: str = "seed-tts-2.0",
-        resource_id: str = None,
-        cluster: Optional[str] = None
-    ) -> Optional[bytes]:
-        """
-        合成语音
-
-        Args:
-            text: 要合成的文本
-            voice_type: 音色类型
-            encoding: 编码格式（mp3, wav 等）
-            speed_ratio: 语速（0.5 - 2.0）
-            volume_ratio: 音量（0.0 - 1.0）
-            model_type: 模型版本
-            resource_id: 资源 ID（用于复刻音色）
-
-        Returns:
-            音频数据（bytes），失败返回 None
-        """
-        # 根据 auth 方式构建请求
-        if cluster:
-            actual_cluster = cluster
-        else:
-            actual_cluster = "volcano_icl" if voice_type.startswith("S_") else "volcano_tts"
-
-        if self.use_appid_token:
-            # 方式 B：APP ID + Access Token
-            request_body = {
-                "app": {
-                    "appid": self.app_id,
-                    "token": self.access_token,
-                    "cluster": actual_cluster
-                },
-                "user": {
-                    "uid": "user_001"
-                },
-                "audio": {
-                    "voice_type": voice_type,
-                    "encoding": encoding,
-                    "speed_ratio": speed_ratio,
-                    "volume_ratio": volume_ratio,
-                    "pitch_ratio": 1.0
-                },
-                "request": {
-                    "reqid": f"req_{int(time.time() * 1000)}",
-                    "text": text,
-                    "text_type": "plain",
-                    "operation": "query"
-                }
-            }
-
-            if model_type == "seed-tts-2.0":
-                request_body["audio"]["model_type"] = model_type
-
-            if resource_id:
-                request_body["audio"]["resource_id"] = resource_id
-
-            body_str = json.dumps(request_body)
-
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer;{self.access_token}"
-            }
-        else:
-            # 方式 A：Access Key + Secret Key
-            request_body = {
-                "app": {
-                    "appid": self.app_id or "default_appid",
-                    "token": self.access_token or "default_token",
-                    "cluster": actual_cluster
-                },
-                "user": {
-                    "uid": "user_001"
-                },
-                "audio": {
-                    "voice_type": voice_type,
-                    "encoding": encoding,
-                    "speed_ratio": speed_ratio,
-                    "volume_ratio": volume_ratio,
-                    "pitch_ratio": 1.0
-                },
-                "request": {
-                    "reqid": f"req_{int(time.time() * 1000)}",
-                    "text": text,
-                    "text_type": "plain",
-                    "operation": "query"
-                }
-            }
-
-            if model_type == "seed-tts-2.0":
-                request_body["audio"]["model_type"] = model_type
-
-            if resource_id:
-                request_body["audio"]["resource_id"] = resource_id
-
-            body_str = json.dumps(request_body)
-            signature = self._generate_signature(body_str)
-
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.access_key}:{signature}"
-            }
-
-        try:
-            response = requests.post(
-                self.api_url,
-                headers=headers,
-                data=body_str,
-                timeout=60
-            )
-
-            if response.status_code == 200:
-                result = response.json()
-
-                is_success = (
-                    result.get("code") == 0 or 
-                    result.get("code") == 3000 or
-                    result.get("message") == "Success"
-                )
-
-                if is_success:
-                    audio_data = base64.b64decode(result.get("data", ""))
-                    return audio_data
-                else:
-                    print(f"TTS API 错误: code={result.get('code')}, message={result.get('message')}")
-                    return None
-            else:
-                print(f"TTS HTTP 错误: {response.status_code}")
-                return None
-
-        except Exception as e:
-            print(f"TTS 请求失败: {e}")
-            return None
+    print("警告: 火山引擎 SDK 未安装，封面生成功能可能不可用")
 
 
 class VolcEngineJimeng:
-    """即梦 AI API 客户端"""
+    """即梦 AI API 客户端（用于封面生成）"""
 
     def __init__(self, access_key: str = "", secret_key: str = "", app_id: str = ""):
         """
@@ -236,7 +50,7 @@ class VolcEngineJimeng:
         else:
             self.visual_service = None
             self.use_sdk = False
-            print("警告: 火山引擎 Visual SDK 未安装，某些功能可能不可用")
+            print("警告: 火山引擎 Visual SDK 未安装，封面生成功能可能不可用")
 
         # 即梦 AI 4.0 模型
         self.req_key = "jimeng_t2i_v40"
@@ -329,17 +143,20 @@ class VolcEngineJimeng:
                 
                 if status == "done":
                     # 任务完成，获取图片
-                    image_base64 = poll_result.get("image_base64")
+                    image_bytes = poll_result.get("image_bytes")
                     image_url = poll_result.get("image_url")
                     
-                    if image_base64:
+                    # 优先使用 image_bytes
+                    if image_bytes:
                         return {
                             "status": "success",
-                            "image_base64": image_base64,
+                            "image_bytes": image_bytes,
                             "task_id": task_id,
                             "message": "图片生成成功"
                         }
-                    elif image_url:
+                    
+                    # 其次使用 image_url
+                    if image_url:
                         return {
                             "status": "success",
                             "image_url": image_url,
@@ -462,6 +279,9 @@ class VolcEngineJimeng:
 
             resp = self.visual_service.cv_sync2async_get_result(payload)
             
+            # 打印完整响应用于调试
+            print(f"查询响应: {resp}")
+            
             # 检查返回
             if resp.get("code") == 0 or resp.get("code") == 3000 or resp.get("code") == 10000:
                 data = resp.get("data", {})
@@ -472,11 +292,28 @@ class VolcEngineJimeng:
                 # 如果任务完成，返回图片数据
                 if status == "done":
                     binary_data = data.get("binary_data_base64", [])
-                    if binary_data:
-                        return {
-                            "status": "done",
-                            "image_base64": binary_data[0] if binary_data else None
-                        }
+                    if binary_data and len(binary_data) > 0:
+                        # binary_data_base64 是一个列表，取第一个元素
+                        img_data = binary_data[0]
+                        if isinstance(img_data, str):
+                            # 如果是 base64 字符串，尝试解码
+                            try:
+                                import base64
+                                image_bytes = base64.b64decode(img_data)
+                                return {
+                                    "status": "done",
+                                    "image_bytes": image_bytes
+                                }
+                            except:
+                                return {
+                                    "status": "error",
+                                    "message": "Base64 解码失败"
+                                }
+                        elif isinstance(img_data, bytes):
+                            return {
+                                "status": "done",
+                                "image_bytes": img_data
+                            }
                     else:
                         return {
                             "status": "done",
@@ -538,9 +375,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent))
     from config import (
         VOLCENGINE_ACCESS_KEY,
-        VOLCENGINE_SECRET_KEY,
-        VOLCENGINE_APP_ID,
-        VOLCENGINE_ACCESS_TOKEN
+        VOLCENGINE_SECRET_KEY
     )
 
     # 测试即梦 AI

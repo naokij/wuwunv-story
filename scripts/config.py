@@ -43,30 +43,31 @@ VOLCENGINE_ACCESS_TOKEN = os.environ.get("VOLCENGINE_ACCESS_TOKEN", "")
 USE_APPID_TOKEN_AUTH = bool(VOLCENGINE_APP_ID and VOLCENGINE_ACCESS_TOKEN)
 
 
-# ==================== 豆包 TTS 配置 ====================
+# ==================== MiniMax TTS 配置 ====================
 
-# TTS API 端点
-TTS_API_URL = "https://openspeech.bytedance.com/api/v1/tts"
+# MiniMax API 配置
+# 获取地址: https://www.minimaxi.com/user-center/basic-information/interface-key
+# - Group ID: 用户中心 → 账户信息 → 基本信息
+# - API Key: 用户中心 → 接口密钥 → 创建新的 API Key
+MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
 
-# 音色类型（需要通过 get_tts_voices.py 获取完整的音色列表）
-# 常见音色：
-# - S_ieReLKSR1: 温柔桃子（复刻）
-# - zh_female_tianmeitaozi_mars_bigtts: 甜美桃子
-# - zh_female_vv_mars_bigtts: Vivi
-# - ICL_zh_female_wenrounvshen_239eff5e8ffa_tob: 温柔女神
-TTS_VOICE_TYPE = os.environ.get("TTS_VOICE_TYPE", "S_ieReLKSR1")
+# MiniMax TTS 模型
+# 可选值：speech-2.8-hd, speech-2.8-turbo, speech-2.6-hd, speech-2.6-turbo, speech-02-hd, speech-02-turbo, speech-01-hd, speech-01-turbo
+MINIMAX_MODEL = "speech-2.8-hd"
 
-# TTS 编码格式
-TTS_ENCODING = "mp3"
+# 是否使用 MiniMax TTS（优先使用 MiniMax）
+USE_MINIMAX_TTS = bool(MINIMAX_API_KEY)
 
-# TTS 语速（0.5 - 2.0，默认 1.0）
-TTS_SPEED_RATIO = 1.0
+# MiniMax 默认参数
+MINIMAX_SPEED = 1.0  # 语速
+MINIMAX_VOL = 1.0  # 音量
+MINIMAX_PITCH = 0  # 音调 (-1 到 1)
+MINIMAX_FORMAT = "mp3"  # 音频格式
+MINIMAX_OUTPUT_TYPE = "hex"  # 输出格式：hex 或 url
 
-# TTS 音量（0.0 - 1.0，默认 1.0）
-TTS_VOLUME_RATIO = 1.0
-
-# TTS 模型版本（seed-tts-1.0 或 seed-tts-2.0）
-TTS_MODEL_TYPE = "seed-tts-2.0"
+# 统一音色配置（所有角色使用同一个音色）
+MINIMAX_VOICE_ID = os.environ.get("MINIMAX_VOICE_ID", "")
+MINIMAX_EMOTION = os.environ.get("MINIMAX_EMOTION", "gentle")  # 默认情感：gentle（温柔）、happy（欢快）、sad（悲伤）等
 
 
 # ==================== 即梦 AI 配置 ====================
@@ -96,19 +97,39 @@ CHARACTERS = {
     "巫巫女": {
         "reference_image": str(REFERENCES_DIR / "巫巫女_reference.jpg"),
         "base_prompt": "巫巫女，乱蓬蓬的紫头发，尖尖的鼻子，穿着彩虹披风，温柔的女巫",
-        "style": "温馨治愈风格，柔和的光线，童话插画风格"
+        "style": "温馨治愈风格，柔和的光线，童话插画风格",
+        # MiniMax 配置（从环境变量读取，所有角色使用同一个音色）
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", ""),
+        "minimax_emotion": os.environ.get("MINIMAX_EMOTION", "gentle")  # 默认情感：gentle（温柔）、happy（欢快）、sad（悲伤）等
     },
     "莉莉": {
         "reference_image": str(REFERENCES_DIR / "莉莉_reference.jpg"),
         "base_prompt": "莉莉，6岁小女孩，扎着小辫子，穿着粉色连衣裙，可爱活泼",
-        "style": "温馨治愈风格，柔和的光线，童话插画风格"
+        "style": "温馨治愈风格，柔和的光线，童话插画风格",
+        # MiniMax 配置（使用统一的音色）
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", ""),
+        "minimax_emotion": os.environ.get("MINIMAX_EMOTION", "gentle")
     },
     "欣欣": {
         "reference_image": str(REFERENCES_DIR / "欣欣_reference.jpg"),
         "base_prompt": "欣欣，6岁小女孩，梳着丸子头，穿黄色羽绒服，戴毛线帽，手里拿着画本和画笔",
-        "style": "温馨治愈风格，柔和的光线，童话插画风格"
+        "style": "温馨治愈风格，柔和的光线，童话插画风格",
+        # MiniMax 配置（使用统一的音色）
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", ""),
+        "minimax_emotion": os.environ.get("MINIMAX_EMOTION", "gentle")
     }
 }
+
+# ==================== 即梦 AI 配置 ====================
+
+# 图像尺寸: 1024*1020, 1080*1920 等
+IMAGE_SIZE = "1024*1020"
+
+# 图像质量: standard, high
+IMAGE_QUALITY = "high"
+
+# 参考图权重（0.0 - 1.0，越高越严格保持角色特征）
+REFERENCE_WEIGHT = 0.8
 
 # 默认风格关键词（所有图片都会添加）
 DEFAULT_STYLE_KEYWORDS = "温馨治愈风格，柔和的光线，童话插画风格，色彩明亮温暖"
@@ -128,7 +149,11 @@ def validate_config():
     """验证配置是否正确"""
     errors = []
 
-    # 检查 API 密钥
+    # 检查 MiniMax API 密钥
+    if not MINIMAX_API_KEY:
+        errors.append("未设置 MINIMAX_API_KEY")
+
+    # 检查火山引擎 API 密钥（用于封面生成）
     if not VOLCENGINE_ACCESS_KEY:
         errors.append("未设置 VOLCENGINE_ACCESS_KEY")
     if not VOLCENGINE_SECRET_KEY:
@@ -159,15 +184,15 @@ def print_config():
     print(f"参考图目录: {REFERENCES_DIR}")
     print()
     print("API 配置:")
-    print(f"  Access Key: {'已设置' if VOLCENGINE_ACCESS_KEY else '未设置'}")
-    print(f"  Secret Key: {'已设置' if VOLCENGINE_SECRET_KEY else '未设置'}")
-    print(f"  App ID: {VOLCENGINE_APP_ID if VOLCENGINE_APP_ID else '未设置'}")
-    print(f"  Access Token: {'已设置' if VOLCENGINE_ACCESS_TOKEN else '未设置'}")
+    print(f"  MiniMax API Key: {'已设置' if MINIMAX_API_KEY else '未设置'}")
+    print(f"  MiniMax Voice ID: {MINIMAX_VOICE_ID if MINIMAX_VOICE_ID else '未设置'}")
+    print(f"  MiniMax Emotion: {MINIMAX_EMOTION}")
+    print(f"  火山引擎 Access Key: {'已设置' if VOLCENGINE_ACCESS_KEY else '未设置'}")
+    print(f"  火山引擎 Secret Key: {'已设置' if VOLCENGINE_SECRET_KEY else '未设置'}")
     print()
     print("TTS 配置:")
-    print(f"  音色: {TTS_VOICE_TYPE}")
-    print(f"  模型: {TTS_MODEL_TYPE}")
-    print(f"  语速: {TTS_SPEED_RATIO}")
+    print(f"  模型: {MINIMAX_MODEL}")
+    print(f"  语速: {MINIMAX_SPEED}")
     print()
     print("即梦 AI 配置:")
     print(f"  模型: {JIMENG_REQ_KEY}")

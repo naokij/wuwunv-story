@@ -28,6 +28,7 @@ wuwunv/
 ├── 设定文档.md              # 完整的世界观设定（核心参考）
 ├── README.md               # 项目说明文档
 ├── README_音频处理.md       # 音频工具使用说明
+├── AGENTS.md               # AI 代理上下文文档
 ├── requirements.txt        # Python 依赖
 ├── .env                    # API 密钥配置（不提交到 Git）
 ├── audio/                  # 音频和图片目录
@@ -36,15 +37,19 @@ wuwunv/
 │   ├── thumbnails/        # 缩略图
 │   └── references/        # 角色参考图（用于封面生成）
 └── scripts/               # 音频处理和自动化工具脚本
-    ├── auto_generate_story.py     # 自动生成故事（音频+封面）
-    ├── volcengine_api.py          # 火山引擎 API 封装
+    ├── generate_story.py          # 整合脚本（一键生成音频+封面）
+    ├── generate_audio.py          # 独立音频生成脚本
+    ├── generate_cover.py          # 独立封面生成脚本
+    ├── minimax_api.py             # MiniMax TTS API 封装
+    ├── volcengine_api.py          # 火山引擎即梦 AI API 封装
     ├── config.py                  # 项目配置
-    ├── get_tts_voices.py          # TTS 音色查询工具
-    ├── process_audio.py           # 音频处理工具
+    ├── clone_voice.py             # MiniMax 音色克隆工具
+    ├── process_audio.py           # 音频处理工具（备用）
     ├── add_metadata_to_existing.py # 为已有音频添加元数据
     ├── batch_add_metadata.py      # 批量添加元数据
     ├── generate_thumbnails.py     # 生成缩略图
     ├── verify_audio.py            # 验证音频元数据
+    ├── MINIMAX_SETUP.md           # MiniMax 配置文档
     ├── auto_generate_story_README.md # 自动生成工具说明
     └── README.md                  # 脚本使用说明
 ```
@@ -155,6 +160,7 @@ wuwunv/
 - 性格：温柔、智慧、善良，喜欢帮助别人
 - 能力：用魔杖洒出善意粉末，拥有各种魔法道具
 - 居住：森林深处歪歪扭扭的小木屋
+- 音色：温柔女巫声音（MiniMax 复刻音色：wuwunv_gentle_taozi）
 
 **莉莉**
 - 年龄：6岁，幼儿园大班
@@ -231,18 +237,18 @@ pip install -r requirements.txt
 ```
 
 **配置 API 密钥**：
-在 `.env` 文件中配置火山引擎 API 密钥：
+在 `.env` 文件中配置 API 密钥：
 
-**方式 A：Access Key + Secret Key**
 ```env
+# MiniMax TTS 配置
+MINIMAX_API_KEY=your_minimax_api_key
+MINIMAX_VOICE_ID=wuwunv_gentle_taozi
+MINIMAX_EMOTION=gentle
+
+# 火山引擎即梦 AI 配置（用于封面生成）
 VOLCENGINE_ACCESS_KEY=your_access_key
 VOLCENGINE_SECRET_KEY=your_secret_key
-```
-
-**方式 B：APP ID + Access Token**
-```env
 VOLCENGINE_APP_ID=your_app_id
-VOLCENGINE_ACCESS_TOKEN=your_access_token
 ```
 
 **准备角色参考图**：
@@ -271,26 +277,25 @@ cover_characters:
 
 #### 3. 自动生成故事
 
-**生成完整故事（音频 + 封面）**：
+**一键生成（音频 + 封面）**：
 ```bash
-python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md"
+python scripts/generate_story.py "23-森林小动物的音乐狂欢日.md"
 ```
 
-**只生成封面（音频必须已存在）**：
+**单独生成音频**：
 ```bash
-python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md" --cover-only
+python scripts/generate_audio.py "23-森林小动物的音乐狂欢日.md"
 ```
 
-**批量生成所有故事**：
+**单独生成封面**：
 ```bash
-python scripts/auto_generate_story.py --all
+python scripts/generate_cover.py "23-森林小动物的音乐狂欢日.md"
 ```
 
 **工作流程**：
-1. 读取故事文件和 frontmatter
-2. 调用火山引擎 TTS 生成音频
-3. 调用即梦 AI 生成封面（支持多角色参考图）
-4. 将标题、内容和封面嵌入 MP3 元数据
+1. `generate_story.py` 整合脚本调用 `generate_audio.py` 和 `generate_cover.py`
+2. `generate_audio.py` 使用 MiniMax TTS API 生成音频
+3. `generate_cover.py` 使用火山引擎即梦 AI 生成封面（支持多角色参考图）
 
 ### 传统工具（备用）
 
@@ -385,13 +390,14 @@ python scripts/verify_audio.py <MP3文件>
    - 添加"给妈妈的小提示"
    - 添加 frontmatter（可选）来自定义封面
 5. **配置环境**：
-   - 配置 `.env` 文件中的 API 密钥
+   - 配置 `.env` 文件中的 API 密钥（MiniMax 和火山引擎）
    - 准备角色参考图（`audio/references/` 目录）
 6. **自动生成**：
    ```bash
-   python scripts/auto_generate_story.py "故事文件名.md"
+   # 一键生成音频和封面
+   python scripts/generate_story.py "故事文件名.md"
    ```
-7. **验证结果**：检查生成的 MP3 文件是否包含正确的封面和元数据
+7. **验证结果**：检查生成的 MP3 和 JPEG 文件
 
 ### 创作新故事（传统方式）
 
@@ -441,12 +447,24 @@ python scripts/verify_audio.py <MP3文件>
 ## 项目版本信息
 
 - 创建日期：2026年1月26日
-- 最后更新：2026年2月2日
+- 最后更新：2026年2月3日
 - 当前故事数：23篇
 - 维护者：巫巫女故事作者
 - Git 仓库：git@github.com-naokij:naokij/wuwunv-story.git
 
 ## 更新日志
+
+### 2026年2月3日
+- 新增独立的音频生成脚本 `generate_audio.py`
+- 新增独立的封面生成脚本 `generate_cover.py`
+- 新增整合脚本 `generate_story.py`（一键生成音频+封面）
+- 新增 MiniMax TTS API 封装 `minimax_api.py`
+- 新增 MiniMax 音色克隆工具 `clone_voice.py`
+- 新增 MiniMax 配置文档 `MINIMAX_SETUP.md`
+- 迁移到 MiniMax TTS（使用复刻音色 wuwunv_gentle_taozi）
+- 移除豆包 TTS 相关代码
+- 简化火山引擎 API（仅保留封面生成功能）
+- 更新所有文档，反映新的技术栈
 
 ### 2026年2月2日
 - 新增自动化工具 `auto_generate_story.py`，支持自动生成音频和封面

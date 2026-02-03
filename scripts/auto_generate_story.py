@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 巫巫女故事自动化生成工具
-使用豆包 TTS API 和即梦 AI API 自动生成音频和封面
+使用 MiniMax TTS API 和即梦 AI API 自动生成音频和封面
 """
 
 import sys
@@ -18,27 +18,26 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import (
     VOLCENGINE_ACCESS_KEY,
     VOLCENGINE_SECRET_KEY,
-    VOLCENGINE_APP_ID,
-    VOLCENGINE_ACCESS_TOKEN,
-    USE_APPID_TOKEN_AUTH,
-    TTS_VOICE_TYPE,
-    TTS_MODEL_TYPE,
-    JIMENG_API_URL,
-    JIMENG_SERVICE,
-    JIMENG_REGION,
-    JIMENG_REQ_KEY,
-    JIMENG_ASPECT_RATIO,
-    JIMENG_IMAGE_QUALITY,
-    JIMENG_REFERENCE_WEIGHT,
+    MINIMAX_API_KEY,
+    MINIMAX_MODEL,
+    USE_MINIMAX_TTS,
+    MINIMAX_SPEED,
+    MINIMAX_VOL,
+    MINIMAX_PITCH,
     CHARACTERS,
-    DEFAULT_STYLE_KEYWORDS,
+    REFERENCES_DIR,
     AUDIO_DIR,
     STORIES_DIR,
+    IMAGE_SIZE,
+    IMAGE_QUALITY,
+    REFERENCE_WEIGHT,
+    DEFAULT_STYLE_KEYWORDS,
     METADATA_ARTIST,
     METADATA_ALBUM,
-    METADATA_GENRE
+    METADATA_GENRE,
+    validate_config
 )
-from volcengine_api import VolcEngineTTS, VolcEngineJimeng
+from volcengine_api import VolcEngineJimeng
 
 try:
     from mutagen.mp3 import MP3
@@ -415,25 +414,19 @@ def generate_cover_only(story_path: str):
         
         if not reference_image or not os.path.exists(reference_image):
             print(f"✗ 角色参考图不存在: {reference_image}")
-            print("提示: 请先在豆包 App 中生成角色参考图")
+            print("提示: 请确保角色参考图存在于 audio/references/ 目录")
             return False
 
-        # 检查 API 密钥
-        use_appid_token = USE_APPID_TOKEN_AUTH
+        # 检查火山引擎 API 密钥（用于封面生成）
         use_key_secret = bool(VOLCENGINE_ACCESS_KEY and VOLCENGINE_SECRET_KEY)
 
-        if not use_appid_token and not use_key_secret:
-            print("✗ 未设置任何认证信息")
+        if not use_key_secret:
+            print("✗ 未设置火山引擎 API 密钥（封面生成需要）")
             print()
-            print("请选择以下方式之一：")
-            print("  方式 A：在 .env 文件中设置 VOLCENGINE_ACCESS_KEY 和 VOLCENGINE_SECRET_KEY")
-            print("  方式 B：在 .env 文件中设置 VOLCENGINE_APP_ID 和 VOLCENGINE_ACCESS_TOKEN")
+            print("请在 .env 文件中设置 VOLCENGINE_ACCESS_KEY 和 VOLCENGINE_SECRET_KEY")
             return False
 
-        if use_appid_token:
-            print(f"✓ 使用方式 B：APP ID + Access Token")
-        else:
-            print(f"✓ 使用方式 A：Access Key + Secret Key")
+        print(f"✓ 使用火山引擎 Access Key + Secret Key")
         print()
 
         # 获取参考图列表（支持多角色）
@@ -596,95 +589,64 @@ def generate_story(story_path: str, generate_cover: bool = True):
         print(f"✓ 音频已存在，跳过音频生成")
         print(f"  音频: {audio_output}")
         print()
-
-    # 检查 API 密钥
-    use_appid_token = USE_APPID_TOKEN_AUTH
-    use_key_secret = bool(VOLCENGINE_ACCESS_KEY and VOLCENGINE_SECRET_KEY)
-
-    if not use_appid_token and not use_key_secret:
-        print("✗ 未设置任何认证信息")
-        print()
-        print("请选择以下方式之一：")
-        print("  方式 A：在 .env 文件中设置 VOLCENGINE_ACCESS_KEY 和 VOLCENGINE_SECRET_KEY")
+        
+        # 检查火山引擎 API 密钥（用于封面生成）
+        use_key_secret = bool(VOLCENGINE_ACCESS_KEY and VOLCENGINE_SECRET_KEY)
+        
+        if not use_key_secret:
+            print("✗ 未设置火山引擎 API 密钥（封面生成需要）")
+            print()
+            print("请选择以下方式之一：")
+            print("  方式 A：在 .env 文件中设置 VOLCENGINE_ACCESS_KEY 和 VOLCENGINE_SECRET_KEY")
         print("  方式 B：在 .env 文件中设置 VOLCENGINE_APP_ID 和 VOLCENGINE_ACCESS_TOKEN")
-        return False
-
-    if use_appid_token:
-        print(f"✓ 使用方式 B：APP ID + Access Token")
-    else:
-        print(f"✓ 使用方式 A：Access Key + Secret Key")
-
-    # ========== 生成音频 ==========
-    if not audio_already_exists:
+                    return False
+        
+                print(f"✓ 使用火山引擎 Access Key + Secret Key")
+        
+            # ========== 生成音频 ==========    if not audio_already_exists:
         print("步骤 1/3: 生成音频")
         print("-" * 60)
     else:
         print("步骤 1/3: 跳过音频生成（已存在）")
         print("-" * 60)
 
-    tts = VolcEngineTTS(
-        access_key=VOLCENGINE_ACCESS_KEY,
-        secret_key=VOLCENGINE_SECRET_KEY,
-        app_id=VOLCENGINE_APP_ID,
-        access_token=VOLCENGINE_ACCESS_TOKEN
-    )
-
-    # 判断是否是复刻音色
-    cluster = "volcano_tts"
-    voice_type_for_request = TTS_VOICE_TYPE
-    
-    if TTS_VOICE_TYPE.startswith("S_"):
-        print("检测到复刻音色，使用 volcano_icl cluster")
-        cluster = "volcano_icl"
-        voice_type_for_request = TTS_VOICE_TYPE
-    print()
-
-    # 计算文本长度（字节）
-    text_bytes = story_content.encode('utf-8')
-    max_length = 1024  # API 限制 1024 字节
-
-    if len(text_bytes) <= max_length:
-        # 文本在限制内，直接生成
-        print(f"文本长度: {len(text_bytes)} 字节（在限制内）")
+    # 使用 MiniMax TTS
+    if USE_MINIMAX_TTS:
+        print("✓ 使用 MiniMax TTS (speech-2.8-hd)")
+        
+        # 导入 MiniMax TTS
+        from minimax_api import MiniMaxTTS
+        
+        # 获取角色配置
+        character_config = CHARACTERS.get(main_character, {})
+        voice_id = character_config.get("minimax_voice_id", "")
+        emotion = character_config.get("minimax_emotion", "gentle")
+        
+        if not voice_id:
+            print("⚠ 警告: 角色未配置 minimax_voice_id，将使用默认音色")
+            # 使用 MiniMax 系统音色
+            voice_id = "female-tianmeijiaojia"  # 可根据需要更改
+        
+        print(f"  音色ID: {voice_id}")
+        print(f"  情感: {emotion}")
+        print()
+        
+        tts = MiniMaxTTS(api_key=MINIMAX_API_KEY)
+        
+        # 直接生成（MiniMax 支持最长 10000 字符）
+        print(f"文本长度: {len(story_content)} 字符")
         audio_data = tts.synthesize_speech(
             text=story_content,
-            voice_type=voice_type_for_request,
-            model_type=TTS_MODEL_TYPE,
-            cluster=cluster
+            voice_id=voice_id,
+            model=MINIMAX_MODEL,
+            speed=MINIMAX_SPEED,
+            vol=MINIMAX_VOL,
+            pitch=MINIMAX_PITCH,
+            emotion=emotion
         )
     else:
-        # 文本超长，需要分段生成
-        print(f"文本长度: {len(text_bytes)} 字节（超过限制 {max_length} 字节）")
-        print("需要分段生成音频...")
-        print()
-
-        # 分段策略：按句子分割，确保每段不超过限制
-        audio_segments = []
-        segments = split_text_for_tts(story_content, max_length)
-        
-        print(f"共分为 {len(segments)} 段")
-        for i, segment in enumerate(segments, 1):
-            segment_bytes = segment.encode('utf-8')
-            print(f"  生成第 {i}/{len(segments)} 段 ({len(segment_bytes)} 字节)...")
-            
-            segment_audio = tts.synthesize_speech(
-                text=segment,
-                voice_type=voice_type_for_request,
-                model_type=TTS_MODEL_TYPE,
-                cluster=cluster
-            )
-            
-            if segment_audio:
-                audio_segments.append(segment_audio)
-                print(f"    ✓ 第 {i} 段完成")
-            else:
-                print(f"    ✗ 第 {i} 段失败")
-                return False
-
-        # 合并所有音频段
-        print()
-        print("合并音频段...")
-        audio_data = merge_audio_segments(audio_segments, audio_output)
+        print("错误: 未配置 MiniMax API Key")
+        return None
 
     if not audio_data:
         print("✗ 音频生成失败")
@@ -735,60 +697,59 @@ def generate_story(story_path: str, generate_cover: bool = True):
         print("✗ 没有可用的参考图")
         return False
 
+    # 生成封面提示词
+    prompt = generate_cover_prompt(story_title, story_content, main_character, frontmatter)
+
     print(f"提示词: {prompt}")
     print(f"参考图: {reference_images}")
     print(f"参考权重: {JIMENG_REFERENCE_WEIGHT}")
     print()
+
+    # 调用即梦 AI 生成封面
+    jimeng = VolcEngineJimeng(
+        access_key=VOLCENGINE_ACCESS_KEY,
+        secret_key=VOLCENGINE_SECRET_KEY
+    )
+
+    image_url = jimeng.generate_image_with_reference(
+        prompt=prompt,
+        reference_image_paths=reference_images,
+        reference_weight=JIMENG_REFERENCE_WEIGHT,
+        quality=JIMENG_IMAGE_QUALITY
+    )
+
+    if not image_url:
+        print("✗ 封面生成失败")
+        return False
+
+    # 下载封面
+    success = jimeng.download_image(image_url, str(cover_output))
+
+    if not success:
+        print("✗ 封面下载失败")
+        return False
+
+    print(f"✓ 封面已保存: {cover_output}")
+    print()
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-巫巫女故事自动化生成工具
+巫巫女故事自动化生成工具 - 主函数
 使用豆包 TTS API 和即梦 AI API 自动生成音频和封面
 """
 
 import sys
-import os
-import yaml
-import re
-import subprocess
 from pathlib import Path
 
 # 添加 scripts 目录到路径
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import (
-    VOLCENGINE_ACCESS_KEY,
-    VOLCENGINE_SECRET_KEY,
-    VOLCENGINE_APP_ID,
-    VOLCENGINE_ACCESS_TOKEN,
-    USE_APPID_TOKEN_AUTH,
-    TTS_VOICE_TYPE,
-    TTS_MODEL_TYPE,
-    JIMENG_API_URL,
-    JIMENG_SERVICE,
-    JIMENG_REGION,
-    JIMENG_REQ_KEY,
-    JIMENG_ASPECT_RATIO,
-    JIMENG_IMAGE_QUALITY,
-    JIMENG_REFERENCE_WEIGHT,
-    CHARACTERS,
-    DEFAULT_STYLE_KEYWORDS,
     AUDIO_DIR,
-    STORIES_DIR,
-    METADATA_ARTIST,
-    METADATA_ALBUM,
-    METADATA_GENRE
+    STORIES_DIR
 )
-from volcengine_api import VolcEngineTTS, VolcEngineJimeng
-
-try:
-    from mutagen.mp3 import MP3
-    from mutagen.id3 import ID3, TIT2, TPE1, TALB, TCON, APIC, COMM, USLT
-except ImportError:
-    print("错误: 需要安装 mutagen 库")
-    print("请运行: pip install mutagen")
-    sys.exit(1)
-
 
 
 def main():
@@ -803,7 +764,13 @@ def main():
   # 生成单个故事
   python scripts/auto_generate_story.py 23-新故事.md
 
-  # 批量生成所有未处理的故事
+  # 只生成封面（音频必须已存在）
+  python scripts/auto_generate_story.py 23-新故事.md --cover-only
+
+  # 批量生成所有故事
+  python scripts/auto_generate_story.py --all
+
+  # 批量生成未处理的故事
   python scripts/auto_generate_story.py --batch
 
   # 指定输出目录
@@ -815,6 +782,11 @@ def main():
         "story",
         nargs="?",
         help="故事文件路径"
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="生成所有故事（包括已存在的）"
     )
     parser.add_argument(
         "--batch",
@@ -840,9 +812,42 @@ def main():
 
     args = parser.parse_args()
 
-    if args.batch:
-        # 批量模式
-        print("批量生成模式")
+    if args.all:
+        # 批量模式：生成所有故事
+        print("批量生成模式 - 处理所有故事")
+        print()
+
+        # 查找所有故事文件
+        story_files = sorted(STORIES_DIR.glob("*.md"))
+
+        if not story_files:
+            print("✓ 未找到故事文件")
+            return
+
+        print(f"找到 {len(story_files)} 个故事文件:")
+        for story_file in story_files:
+            print(f"  - {story_file.name}")
+        print()
+
+        # 逐个生成
+        for i, story_file in enumerate(story_files, 1):
+            print(f"\n[{i}/{len(story_files)}] 处理: {story_file.name}")
+            print("-" * 60)
+
+            if args.cover_only:
+                # 只生成封面
+                generate_cover_only(story_file)
+            else:
+                # 生成完整故事
+                success = generate_story(story_file, generate_cover=not args.no_cover)
+
+                if not success:
+                    print(f"✗ 生成失败: {story_file.name}")
+                    continue
+
+    elif args.batch:
+        # 批量模式：只生成未处理的故事
+        print("批量生成模式 - 处理未处理的故事")
         print()
 
         # 查找所有故事文件
@@ -894,7 +899,9 @@ def main():
         print("  2. 设置 API 密钥:")
         print("     export VOLCENGINE_ACCESS_KEY=\"你的AccessKey\"")
         print("     export VOLCENGINE_SECRET_KEY=\"你的SecretKey\"")
-        print("  3. 运行此脚本生成故事")
+        print("  3. 或者在 .env 文件中配置:")
+        print("     VOLCENGINE_ACCESS_KEY=你的AccessKey")
+        print("     VOLCENGINE_SECRET_KEY=你的SecretKey")
 
 
 if __name__ == "__main__":
