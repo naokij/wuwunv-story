@@ -347,6 +347,12 @@ def read_story_content(story_path: str) -> Tuple[str, str]:
         with open(story_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
+        # 移除 frontmatter
+        if content.startswith('---'):
+            end_idx = content.find('---', 3)
+            if end_idx != -1:
+                content = content[end_idx + 3:].lstrip()
+        
         lines = content.split('\n')
         raw_title = lines[0].strip() if lines else "未知故事"
         # 清理标题
