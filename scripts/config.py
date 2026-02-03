@@ -67,7 +67,30 @@ MINIMAX_OUTPUT_TYPE = "hex"  # 输出格式：hex 或 url
 
 # 统一音色配置（所有角色使用同一个音色）
 MINIMAX_VOICE_ID = os.environ.get("MINIMAX_VOICE_ID", "")
-MINIMAX_EMOTION = os.environ.get("MINIMAX_EMOTION", "gentle")  # 默认情感：gentle（温柔）、happy（欢快）、sad（悲伤）等
+# 注意：MiniMax 会根据内容自动设置感情，无需手动设置 emotion 参数
+
+# 语气词标签说明（仅 speech-2.8-hd 和 speech-2.8-turbo 支持）
+# 语气词标签直接在故事文本中使用，无需额外配置
+# 支持的标签：
+#   (laughs) - 笑声
+#   (chuckle) - 轻笑
+#   (coughs) - 咳嗽
+#   (clear-throat) - 清嗓子
+#   (groans) - 呻吟
+#   (breath) - 正常换气
+#   (pant) - 喘气
+#   (inhale) - 吸气
+#   (exhale) - 呼气
+#   (gasps) - 倒吸气
+#   (sniffs) - 吸鼻子
+#   (sighs) - 叹气
+#   (snorts) - 喷鼻息
+#   (burps) - 打嗝
+#   (lip-smacking) - 咂嘴
+#   (humming) - 哼唱
+#   (hissing) - 嘶嘶声
+#   (emm) - 嗯
+#   (sneezes) - 喷嚏
 
 
 # ==================== 即梦 AI 配置 ====================
@@ -99,24 +122,21 @@ CHARACTERS = {
         "base_prompt": "巫巫女，乱蓬蓬的紫头发，尖尖的鼻子，穿着彩虹披风，温柔的女巫",
         "style": "温馨治愈风格，柔和的光线，童话插画风格",
         # MiniMax 配置（从环境变量读取，所有角色使用同一个音色）
-        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", ""),
-        "minimax_emotion": os.environ.get("MINIMAX_EMOTION", "gentle")  # 默认情感：gentle（温柔）、happy（欢快）、sad（悲伤）等
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
     },
     "莉莉": {
         "reference_image": str(REFERENCES_DIR / "莉莉_reference.jpg"),
         "base_prompt": "莉莉，6岁小女孩，扎着小辫子，穿着粉色连衣裙，可爱活泼",
         "style": "温馨治愈风格，柔和的光线，童话插画风格",
         # MiniMax 配置（使用统一的音色）
-        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", ""),
-        "minimax_emotion": os.environ.get("MINIMAX_EMOTION", "gentle")
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
     },
     "欣欣": {
         "reference_image": str(REFERENCES_DIR / "欣欣_reference.jpg"),
         "base_prompt": "欣欣，6岁小女孩，梳着丸子头，穿黄色羽绒服，戴毛线帽，手里拿着画本和画笔",
         "style": "温馨治愈风格，柔和的光线，童话插画风格",
         # MiniMax 配置（使用统一的音色）
-        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", ""),
-        "minimax_emotion": os.environ.get("MINIMAX_EMOTION", "gentle")
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
     }
 }
 

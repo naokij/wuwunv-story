@@ -18,7 +18,6 @@ from config import (
     MINIMAX_API_KEY,
     MINIMAX_MODEL,
     MINIMAX_VOICE_ID,
-    MINIMAX_EMOTION,
     CHARACTERS,
     STORIES_DIR,
     AUDIO_DIR
@@ -26,24 +25,37 @@ from config import (
 from minimax_api import MiniMaxTTS
 
 
-def extract_story_content(story_file: str) -> tuple[str, str]:
+def extract_story_config(story_file: str) -> tuple[str, str, dict]:
     """
-    从 Markdown 文件中提取故事内容
+    从 Markdown 文件中提取故事内容和配置
     
     Args:
         story_file: 故事文件路径
     
     Returns:
-        (故事标题, 故事内容)
+        (故事标题, 故事内容, frontmatter配置字典)
     """
     with open(story_file, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # 提取第一个标题（作为故事标题）
-    title_match = re.search(r'^#\s*(.+)', content, re.MULTILINE)
-    title = title_match.group(1).strip() if title_match else "未命名故事"
+    # 解析 frontmatter
+    frontmatter = {}
+    if content.startswith('---'):
+        import yaml
+        match = re.search(r'^---\n(.*?)\n---', content, re.DOTALL)
+        if match:
+            try:
+                frontmatter = yaml.safe_load(match.group(1))
+            except:
+                pass
     
-    # 移除 frontmatter（如果有）
+    # 提取第一个标题（作为故事标题）
+    title = frontmatter.get('title', '')
+    if not title:
+        title_match = re.search(r'^#\s*(.+)', content, re.MULTILINE)
+        title = title_match.group(1).strip() if title_match else "未命名故事"
+    
+    # 移除 frontmatter
     if content.startswith('---'):
         content = re.sub(r'^---.*?---', '', content, count=1, flags=re.DOTALL)
     
@@ -53,6 +65,24 @@ def extract_story_content(story_file: str) -> tuple[str, str]:
     # 清理空白
     content = content.strip()
     
+    # 把标题加回到内容开头（用于配音）
+    if title:
+        content = f"{title}。\n\n{content}"
+    
+    return title, content, frontmatter
+
+
+def extract_story_content(story_file: str) -> tuple[str, str]:
+    """
+    从 Markdown 文件中提取故事内容（兼容旧版本）
+    
+    Args:
+        story_file: 故事文件路径
+    
+    Returns:
+        (故事标题, 故事内容)
+    """
+    title, content, _ = extract_story_config(story_file)
     return title, content
 
 
@@ -106,9 +136,9 @@ def generate_audio(story_file: str, force: bool = False) -> bool:
         print("  使用 --force 参数可强制重新生成")
         return True
     
-    # 读取故事内容
+    # 读取故事内容和配置
     print(f"读取故事: {story_file}")
-    title, content = extract_story_content(story_file)
+    title, content, frontmatter = extract_story_config(story_file)
     print(f"  标题: {title}")
     print(f"  长度: {len(content)} 字符")
     
@@ -116,6 +146,17 @@ def generate_audio(story_file: str, force: bool = False) -> bool:
     main_character = detect_main_character(content)
     print(f"  主要角色: {main_character}")
     print()
+    
+    # 检查文本中是否包含语气词标签
+    import re
+    tone_pattern = r'\((laughs|chuckle|coughs|clear-throat|groans|breath|pant|inhale|exhale|gasps|sniffs|sighs|snorts|burps|lip-smacking|humming|hissing|emm|sneezes)\)'
+    tone_matches = re.findall(tone_pattern, content, re.IGNORECASE)
+    if tone_matches and MINIMAX_MODEL in ["speech-2.8-hd", "speech-2.8-turbo"]:
+        print(f"  ✓ 检测到 {len(tone_matches)} 个语气词标签")
+        print(f"    标签: {', '.join(set(tone_matches))}")
+    elif tone_matches:
+        print(f"  ⚠ 检测到 {len(tone_matches)} 个语气词标签")
+        print(f"    但当前模型 {MINIMAX_MODEL} 不支持，标签将被忽略")
     
     # 检查 API 密钥
     if not MINIMAX_API_KEY:
@@ -126,7 +167,6 @@ def generate_audio(story_file: str, force: bool = False) -> bool:
     # 获取角色配置
     character_config = CHARACTERS.get(main_character, {})
     voice_id = character_config.get("minimax_voice_id", MINIMAX_VOICE_ID)
-    emotion = character_config.get("minimax_emotion", MINIMAX_EMOTION)
     
     if not voice_id:
         print("⚠ 警告: 角色未配置 minimax_voice_id")
@@ -136,7 +176,7 @@ def generate_audio(story_file: str, force: bool = False) -> bool:
     print(f"语音合成配置:")
     print(f"  模型: {MINIMAX_MODEL}")
     print(f"  音色ID: {voice_id}")
-    print(f"  情感: {emotion}")
+    print(f"  感情: 自动（MiniMax 根据内容自动设置）")
     print()
     
     # 创建 TTS 客户端
@@ -147,8 +187,7 @@ def generate_audio(story_file: str, force: bool = False) -> bool:
     audio_data = tts.synthesize_speech(
         text=content,
         voice_id=voice_id,
-        model=MINIMAX_MODEL,
-        emotion=emotion
+        model=MINIMAX_MODEL
     )
     
     if not audio_data:

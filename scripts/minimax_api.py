@@ -4,6 +4,7 @@
 MiniMax TTS API 客户端
 支持 speech-2.8-hd 等模型的语音合成
 使用 WebSocket API 实现
+支持语气词标签
 """
 
 import asyncio
@@ -63,16 +64,37 @@ class MiniMaxTTS:
         合成语音（使用 WebSocket API）
 
         Args:
-            text: 要合成的文本
+            text: 要合成的文本（可包含语气词标签）
             voice_id: 音色 ID（系统音色或克隆音色）
             model: 模型版本（默认：speech-2.8-hd）
             speed: 语速（默认：1.0）
             vol: 音量（默认：1.0）
             pitch: 音调（默认：0）
-            emotion: 情感控制（暂不支持）
+            emotion: 情感控制（已废弃，MiniMax 会根据内容自动设置）
 
         Returns:
             音频数据（bytes），失败返回 None
+        
+        支持的语气词标签（仅 speech-2.8-hd 和 speech-2.8-turbo 支持）：
+            (laughs) - 笑声
+            (chuckle) - 轻笑
+            (coughs) - 咳嗽
+            (clear-throat) - 清嗓子
+            (groans) - 呻吟
+            (breath) - 正常换气
+            (pant) - 喘气
+            (inhale) - 吸气
+            (exhale) - 呼气
+            (gasps) - 倒吸气
+            (sniffs) - 吸鼻子
+            (sighs) - 叹气
+            (snorts) - 喷鼻息
+            (burps) - 打嗝
+            (lip-smacking) - 咂嘴
+            (humming) - 哼唱
+            (hissing) - 嘶嘶声
+            (emm) - 嗯
+            (sneezes) - 喷嚏
         """
         # 使用默认值
         model = model or self.default_model
@@ -80,10 +102,17 @@ class MiniMaxTTS:
         vol = vol if vol is not None else self.default_vol
         pitch = pitch if pitch is not None else self.default_pitch
 
-        # 情感控制暂不支持
+        # emotion 参数已废弃，MiniMax 会根据内容自动设置
         if emotion:
-            print(f"警告: emotion 参数暂不支持，将被忽略")
-
+            print(f"提示: emotion 参数已废弃，MiniMax 会根据内容自动设置感情，将被忽略")
+        
+        # 检查文本中是否包含语气词标签
+        if model not in ["speech-2.8-hd", "speech-2.8-turbo"]:
+            import re
+            tone_pattern = r'\((laughs|chuckle|coughs|clear-throat|groans|breath|pant|inhale|exhale|gasps|sniffs|sighs|snorts|burps|lip-smacking|humming|hissing|emm|sneezes)\)'
+            if re.search(tone_pattern, text, re.IGNORECASE):
+                print(f"警告: 检测到文本中包含语气词标签，但当前模型 {model} 不支持，标签将被忽略")
+        
         # 运行异步 WebSocket 调用
         self._rate_limit_wait()
         return asyncio.run(self._synthesize_via_websocket(
@@ -102,7 +131,8 @@ class MiniMaxTTS:
         model: str,
         speed: float,
         vol: float,
-        pitch: int
+        pitch: int,
+        emotion: str = None
     ) -> Optional[bytes]:
         """通过 WebSocket 合成语音"""
         ssl_context = ssl.create_default_context()
@@ -123,7 +153,7 @@ class MiniMaxTTS:
                     print(f"连接失败: {connected_msg}")
                     return None
                 
-                # 发送开始任务请求
+                # 构建开始任务请求
                 start_msg = {
                     "event": "task_start",
                     "model": model,
@@ -134,6 +164,7 @@ class MiniMaxTTS:
                         "pitch": int(pitch)
                     }
                 }
+                
                 await ws.send(json.dumps(start_msg))
                 
                 # 等待任务开始
@@ -142,7 +173,7 @@ class MiniMaxTTS:
                     print(f"任务启动失败: {start_response}")
                     return None
                 
-                # 发送文本
+                # 发送文本（文本中可包含语气词标签）
                 await ws.send(json.dumps({
                     "event": "task_continue",
                     "text": text
@@ -196,14 +227,21 @@ if __name__ == "__main__":
     # 创建客户端
     tts = MiniMaxTTS(api_key=api_key)
     
-    # 测试合成
+    # 测试合成（带语气词标签）
     text = "你好，这是一个测试。"
     voice_id = "wuwunv_gentle_taozi"  # 使用克隆的音色
+    
+    # 语气词标签示例
+    tone_tags = [
+        "你好/(ni3)(hao3)",  # 指定拼音
+        "测试/ceshi4"  # 英文或拼音
+    ]
     
     audio_data = tts.synthesize_speech(
         text=text,
         voice_id=voice_id,
-        model="speech-2.8-hd"
+        model="speech-2.8-hd",
+        tone_tags=tone_tags
     )
     
     if audio_data:
