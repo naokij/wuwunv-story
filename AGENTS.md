@@ -421,7 +421,19 @@ python scripts/verify_audio.py <MP3文件>
    # 一键生成音频和封面
    python scripts/generate_story.py "故事文件名.md"
    ```
-7. **验证结果**：检查生成的 MP3 和 JPEG 文件
+7. **嵌入元数据**：
+   ```bash
+   python scripts/add_metadata_to_existing.py "audio/故事文件名.mp3"
+   ```
+8. **生成缩略图**（重要！否则 README 中的封面无法显示）：
+   ```bash
+   python scripts/generate_thumbnails.py
+   ```
+9. **更新 README**：在 README.md 的故事目录表格中添加新故事行
+10. **验证结果**：
+    ```bash
+    python scripts/verify_audio.py "audio/故事文件名.mp3"
+    ```
 
 ### 创作新故事（传统方式）
 
@@ -437,7 +449,12 @@ python scripts/verify_audio.py <MP3文件>
 6. **处理音频**：
    - 录制豆包 App 播放过程
    - 使用 `scripts/process_audio.py` 处理录屏
-7. **验证结果**：
+7. **生成缩略图**（重要！）：
+   ```bash
+   python scripts/generate_thumbnails.py
+   ```
+8. **更新 README**：在 README.md 的故事目录表格中添加新故事行
+9. **验证结果**：
    ```bash
    python scripts/verify_audio.py <生成的MP3文件>
    ```
@@ -466,14 +483,15 @@ python scripts/verify_audio.py <MP3文件>
 6. **文件命名要遵循规范，便于工具自动匹配**
 7. **使用 `--cover-only` 参数可以跳过 API 请求，直接嵌入现有封面**
 8. **`generate_story.py` 生成后，务必运行 `add_metadata_to_existing.py` 嵌入元数据**
+9. **务必运行 `generate_thumbnails.py` 生成缩略图，并更新 README.md 中的故事目录**
 
 ---
 
 ## 项目版本信息
 
 - 创建日期：2026年1月26日
-- 最后更新：2026年2月3日
-- 当前故事数：23篇
+- 最后更新：2026年2月4日
+- 当前故事数：25篇
 - 维护者：巫巫女故事作者
 - Git 仓库：git@github.com-naokij:naokij/wuwunv-story.git
 

@@ -256,13 +256,22 @@ python scripts/process_audio.py screen_recording.mov output.mp3 cover.jpg story.
 - 根据文件名自动查找对应的故事 `.md` 和封面图片
 - 将故事标题、简介和全文写入 MP3 元数据
 
-#### generate_thumbnails.py
+#### generate_thumbnails.py - 生成缩略图
 
-为封面图片批量生成缩略图。
+为封面图片批量生成缩略图，用于 README 中的故事目录表格显示。
 
 ```bash
 python scripts/generate_thumbnails.py
 ```
+
+**特性**：
+- 扫描 `audio/` 目录中的所有封面图片
+- 在 `audio/thumbnails/` 下生成最长边不超过 400 像素的缩略图
+- 缩略图命名：`{原文件名}_thumb.{扩展名}`
+
+**重要提示**：
+- 每次添加新故事并生成封面后，**务必运行此脚本更新缩略图**
+- 否则 README 中的故事目录会显示损坏的图片链接
 
 ### 元数据说明
 
@@ -286,6 +295,29 @@ python scripts/generate_thumbnails.py
 
 2. **故事文件**: 查找与音频文件同名的 Markdown 文件
    - 查找顺序：项目根目录 → 当前目录
+
+### 完整工作流程
+
+当创作一个新故事时，完整的工作流程如下：
+
+```bash
+# 1. 编写故事文件（如 26-新故事.md）
+# 确保文件包含 frontmatter：title, cover_prompt, cover_characters
+
+# 2. 生成音频和封面
+python scripts/generate_story.py "26-新故事.md"
+
+# 3. 添加元数据到音频
+python scripts/add_metadata_to_existing.py "audio/26-新故事.mp3"
+
+# 4. 生成缩略图（重要！否则 README 中的图片会显示不出来）
+python scripts/generate_thumbnails.py
+
+# 5. 验证结果
+python scripts/verify_audio.py "audio/26-新故事.mp3"
+
+# 6. 更新 README.md 中的故事目录表格，添加新故事行
+```
 
 ### 注意事项
 
