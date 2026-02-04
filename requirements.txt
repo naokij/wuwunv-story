@@ -2,3 +2,6 @@ mutagen>=1.47.0
 requests>=2.31.0
 python-dotenv>=1.0.0
 volcengine
+websockets>=12.0
+pyyaml>=6.0
+pillow>=10.0.0

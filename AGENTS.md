@@ -50,7 +50,6 @@ wuwunv/
     ├── generate_thumbnails.py     # 生成缩略图
     ├── verify_audio.py            # 验证音频元数据
     ├── MINIMAX_SETUP.md           # MiniMax 配置文档
-    ├── auto_generate_story_README.md # 自动生成工具说明
     └── README.md                  # 脚本使用说明
 ```
 
@@ -83,7 +82,7 @@ wuwunv/
 - **内容结构**：
   1. 标题（第一行）
   2. 故事正文（温馨治愈风格）
-  3. 给妈妈的小提示（互动提问）
+  3. ~~给妈妈的小提示（互动提问）~~（从第25篇起不再单独编写）
   4. 结尾标识（从第02篇起必须有甜梦场景）
 
 ### 音频文件
@@ -96,25 +95,24 @@ wuwunv/
 
 #### 自动化工具（推荐使用）
 
-**auto_generate_story.py** ⭐️主要工具
-- 功能：从 Markdown 故事文件自动生成音频、封面和元数据
+**generate_story.py** ⭐️主要工具
+- 功能：从 Markdown 故事文件自动生成音频和封面
 - 特性：
-  - 集成火山引擎 TTS（文本转语音）
+  - 集成 MiniMax TTS（文本转语音）
   - 集成即梦 AI（封面图片生成）
   - 支持自定义封面提示词（frontmatter）
   - 支持多角色参考图（最多10张）
-  - 自动嵌入元数据到 MP3 文件
-- **文档**：[scripts/auto_generate_story_README.md](scripts/auto_generate_story_README.md)
+- **注意**：生成后需要单独运行 `add_metadata_to_existing.py` 嵌入元数据
 - **使用示例**：
   ```bash
   # 生成完整故事（音频+封面）
-  python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md"
+  python scripts/generate_story.py "23-森林小动物的音乐狂欢日.md"
   
   # 只生成封面（音频必须已存在）
-  python scripts/auto_generate_story.py "23-森林小动物的音乐狂欢日.md" --cover-only
+  python scripts/generate_story.py "23-森林小动物的音乐狂欢日.md" --skip-audio
   
-  # 批量生成所有故事
-  python scripts/auto_generate_story.py --all
+  # 强制重新生成
+  python scripts/generate_story.py "23-森林小动物的音乐狂欢日.md" --force
   ```
 
 **volcengine_api.py**
@@ -292,10 +290,35 @@ python scripts/generate_audio.py "23-森林小动物的音乐狂欢日.md"
 python scripts/generate_cover.py "23-森林小动物的音乐狂欢日.md"
 ```
 
-**工作流程**：
+**完整工作流程**：
 1. `generate_story.py` 整合脚本调用 `generate_audio.py` 和 `generate_cover.py`
 2. `generate_audio.py` 使用 MiniMax TTS API 生成音频
 3. `generate_cover.py` 使用火山引擎即梦 AI 生成封面（支持多角色参考图）
+4. `add_metadata_to_existing.py` 嵌入元数据（标题、封面、简介、全文）到 MP3
+
+#### 4. 嵌入元数据（重要！）
+
+`generate_story.py` 生成音频和封面后，**必须**单独运行元数据嵌入脚本，将标题、封面图片、简介、全文等信息写入 MP3 文件：
+
+**为单个文件添加元数据**：
+```bash
+python scripts/add_metadata_to_existing.py "audio/23-森林小动物的音乐狂欢日.mp3"
+```
+
+**批量添加元数据**（推荐，处理所有缺少元数据的 MP3 文件）：
+```bash
+python scripts/batch_add_metadata.py
+```
+
+**验证元数据**：
+```bash
+python scripts/verify_audio.py "audio/23-森林小动物的音乐狂欢日.mp3"
+```
+
+**为什么需要单独嵌入元数据？**
+- `generate_story.py` 只负责生成音频文件和封面图片
+- 元数据嵌入需要读取故事文件内容、匹配封面图片，逻辑较复杂
+- 分开处理可以灵活调整元数据，无需重新生成音频
 
 ### 传统工具（备用）
 
@@ -388,7 +411,7 @@ python scripts/verify_audio.py <MP3文件>
    - 使用温馨治愈的语言
    - 保持角色性格一致
    - 从第02篇起，结尾必须包含完整的甜梦场景
-   - 添加"给妈妈的小提示"
+   - ~~添加"给妈妈的小提示"~~（从第25篇起不再单独编写）
    - 添加 frontmatter（可选）来自定义封面
 5. **配置环境**：
    - 配置 `.env` 文件中的 API 密钥（MiniMax 和火山引擎）
@@ -409,7 +432,7 @@ python scripts/verify_audio.py <MP3文件>
    - 使用温馨治愈的语言
    - 保持角色性格一致
    - 从第02篇起，结尾必须包含完整的甜梦场景
-   - 添加"给妈妈的小提示"
+   - ~~添加"给妈妈的小提示"~~（从第25篇起不再单独编写）
 5. **生成音频**：使用豆包 App 的"温柔桃子"音色进行 TTS 合成
 6. **处理音频**：
    - 录制豆包 App 播放过程
@@ -438,10 +461,11 @@ python scripts/verify_audio.py <MP3文件>
 1. **任何新故事创作前必须先阅读 `设定文档.md`**
 2. **第02篇起每篇故事必须包含甜梦场景**
 3. **保持角色设定和故事风格的一致性**
-4. **推荐使用自动化工具 `auto_generate_story.py` 生成音频和封面**
+4. **推荐使用自动化工具 `generate_story.py` 生成音频和封面，然后使用 `add_metadata_to_existing.py` 嵌入元数据**
 5. **自动化工具需要配置 API 密钥和角色参考图**
 6. **文件命名要遵循规范，便于工具自动匹配**
 7. **使用 `--cover-only` 参数可以跳过 API 请求，直接嵌入现有封面**
+8. **`generate_story.py` 生成后，务必运行 `add_metadata_to_existing.py` 嵌入元数据**
 
 ---
 
@@ -466,6 +490,12 @@ python scripts/verify_audio.py <MP3文件>
 - 移除豆包 TTS 相关代码
 - 简化火山引擎 API（仅保留封面生成功能）
 - 更新所有文档，反映新的技术栈
+
+### 2026年2月4日
+- 更新 `AGENTS.md`，明确元数据嵌入流程
+- 说明 `generate_story.py` 和 `add_metadata_to_existing.py` 的分工
+- 更新"给妈妈的小提示"为可选（从第25篇起不再编写）
+- 修正脚本名称（`auto_generate_story.py` → `generate_story.py`）
 
 ### 2026年2月2日
 - 新增自动化工具 `auto_generate_story.py`，支持自动生成音频和封面
