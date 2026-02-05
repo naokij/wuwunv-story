@@ -111,6 +111,7 @@ class VolcEngineJimeng:
                 - quality: 图片质量，默认 "high"
                 - reference_images: 参考图片 URL 列表（可选，用于图生图）
                 - reference_strength: 参考图强度，默认 0.5
+                - max_retries: 最大重试次数，默认 3
 
         Returns:
             {
@@ -121,71 +122,102 @@ class VolcEngineJimeng:
                 "message": str
             }
         """
-        try:
-            # 1. 提交任务
-            submit_result = self._submit_task(prompt, **kwargs)
-            
-            if submit_result.get("status") != "success":
-                return submit_result
+        max_retries = kwargs.get("max_retries", 3)
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            try:
+                # 1. 提交任务
+                submit_result = self._submit_task(prompt, **kwargs)
+                
+                if submit_result.get("status") != "success":
+                    retry_count += 1
+                    if retry_count >= max_retries:
+                        return submit_result
+                    print(f"提交失败，第 {retry_count} 次重试...")
+                    time.sleep(2)
+                    continue
 
-            task_id = submit_result.get("task_id")
-            print(f"图片生成任务已提交，任务ID: {task_id}")
+                task_id = submit_result.get("task_id")
+                print(f"任务已提交: {task_id}")
 
-            # 2. 轮询任务状态
-            print("开始轮询任务状态，最多尝试 30 次，每次间隔 10 秒...")
-            for i in range(30):
-                time.sleep(10)
+                # 2. 轮询任务状态（增加轮询次数到 60 次，间隔 5 秒，总计最多 5 分钟）
+                max_polls = 60
+                poll_interval = 5
                 
-                poll_result = self._poll_task_result(task_id)
-                status = poll_result.get("status", "")
-                
-                print(f"第 {i+1} 次查询: 任务状态 = {status}")
-                
-                if status == "done":
-                    # 任务完成，获取图片
-                    image_bytes = poll_result.get("image_bytes")
-                    image_url = poll_result.get("image_url")
+                for i in range(max_polls):
+                    time.sleep(poll_interval)
                     
-                    # 优先使用 image_bytes
-                    if image_bytes:
-                        return {
-                            "status": "success",
-                            "image_bytes": image_bytes,
-                            "task_id": task_id,
-                            "message": "图片生成成功"
-                        }
+                    poll_result = self._poll_task_result(task_id)
+                    status = poll_result.get("status", "")
                     
-                    # 其次使用 image_url
-                    if image_url:
-                        return {
-                            "status": "success",
-                            "image_url": image_url,
-                            "task_id": task_id,
-                            "message": "图片生成成功"
-                        }
-                    else:
+                    if i % 3 == 0:  # 每3次打印一次状态
+                        print(f"  生成中... ({i * poll_interval}s)")
+                    
+                    if status == "done":
+                        # 任务完成，获取图片
+                        image_bytes = poll_result.get("image_bytes")
+                        image_url = poll_result.get("image_url")
+                        
+                        # 优先使用 image_bytes
+                        if image_bytes:
+                            return {
+                                "status": "success",
+                                "image_bytes": image_bytes,
+                                "task_id": task_id,
+                                "message": "图片生成成功"
+                            }
+                        
+                        # 其次使用 image_url
+                        if image_url:
+                            return {
+                                "status": "success",
+                                "image_url": image_url,
+                                "task_id": task_id,
+                                "message": "图片生成成功"
+                            }
+                        else:
+                            return {
+                                "status": "error",
+                                "message": "任务完成但未返回图片数据"
+                            }
+                    elif status == "failed":
+                        error_msg = poll_result.get("message", "任务失败")
+                        print(f"  任务失败: {error_msg}")
+                        retry_count += 1
+                        if retry_count >= max_retries:
+                            return {
+                                "status": "error",
+                                "message": error_msg
+                            }
+                        print(f"  第 {retry_count} 次重试...")
+                        time.sleep(2)
+                        break  # 跳出轮询，重新提交任务
+                    # 其他状态（如 pending, processing）继续轮询
+
+                else:  # 轮询次数用尽
+                    print(f"  轮询超时，第 {retry_count + 1} 次重试...")
+                    retry_count += 1
+                    if retry_count >= max_retries:
                         return {
                             "status": "error",
-                            "message": "任务完成但未返回图片数据"
+                            "message": "任务超时，已达到最大重试次数"
                         }
-                elif status == "failed":
+
+            except Exception as e:
+                retry_count += 1
+                print(f"  异常: {e}，第 {retry_count} 次重试...")
+                if retry_count >= max_retries:
                     return {
                         "status": "error",
-                        "message": poll_result.get("message", "任务失败")
+                        "message": f"生成图片失败: {str(e)}"
                     }
-                # 其他状态（如 pending, processing）继续轮询
-
-            # 超时
-            return {
-                "status": "error",
-                "message": "任务超时，请稍后手动查询任务状态"
-            }
-
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": f"生成图片失败: {str(e)}"
-            }
+                time.sleep(2)
+        
+        return {
+            "status": "error",
+            "message": "已达到最大重试次数"
+        }
 
     def _submit_task(self, prompt: str, **kwargs) -> dict:
         """提交文生图任务"""

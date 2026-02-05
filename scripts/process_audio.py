@@ -424,9 +424,10 @@ def add_metadata(audio_path: str, cover_path: Optional[str] = None,
                 }
                 mime_type = mime_types.get(ext, 'image/jpeg')
                 
-                # 删除旧的封面（如果存在）
-                if 'APIC:' in audio_file:
-                    del audio_file['APIC:']
+                # 删除所有旧的封面标签（修复：正确处理多个 APIC 标签）
+                keys_to_delete = [key for key in audio_file.keys() if key.startswith('APIC')]
+                for key in keys_to_delete:
+                    del audio_file[key]
                 
                 audio_file['APIC'] = APIC(
                     encoding=3,

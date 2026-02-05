@@ -194,12 +194,15 @@ def generate_cover(story_file: str, force: bool = False) -> bool:
     )
     
     # 生成封面
+    print("  正在提交任务到即梦 AI...")
+    print("  提示: 生成可能需要 30-60 秒，请耐心等待...")
     result = jimeng.generate_image(
         prompt=prompt,
         reference_images=reference_images,
         reference_strength=JIMENG_REFERENCE_WEIGHT,
         image_size=IMAGE_SIZE,
-        quality=IMAGE_QUALITY
+        quality=IMAGE_QUALITY,
+        max_retries=3  # 增加重试次数
     )
     
     if result.get("status") != "success":
@@ -208,12 +211,23 @@ def generate_cover(story_file: str, force: bool = False) -> bool:
     
     # 获取图片数据
     image_data = result.get("image_bytes")
+    image_url = result.get("image_url")
+    
+    if not image_data and image_url:
+        # 如果有 URL 但没有数据，尝试下载
+        print(f"  从 URL 下载图片: {image_url[:60]}...")
+        try:
+            import requests
+            response = requests.get(image_url, timeout=60)
+            if response.status_code == 200:
+                image_data = response.content
+                print(f"  ✓ 下载成功: {len(image_data)/1024:.1f} KB")
+            else:
+                print(f"  ✗ 下载失败: HTTP {response.status_code}")
+        except Exception as e:
+            print(f"  ✗ 下载异常: {e}")
+    
     if not image_data:
-        image_url = result.get("image_url")
-        if image_url:
-            print(f"⚠ 未返回图片数据，只返回了 URL: {image_url}")
-            print("  请手动下载图片")
-            return False
         print("✗ 未返回图片数据")
         return False
     

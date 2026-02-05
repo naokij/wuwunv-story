@@ -35,6 +35,7 @@
 | 23 | <img src="audio/thumbnails/23-森林小动物的音乐狂欢日_thumb.jpeg" width="80" /> | [森林小动物的音乐狂欢日](23-森林小动物的音乐狂欢日.md) | [audio/23-森林小动物的音乐狂欢日.mp3](audio/23-森林小动物的音乐狂欢日.mp3) |
 | 24 | <img src="audio/thumbnails/24-莉莉和欣欣的魔法树屋大冒险_thumb.jpeg" width="80" /> | [莉莉和欣欣的魔法树屋大冒险](24-莉莉和欣欣的魔法树屋大冒险.md) | [audio/24-莉莉和欣欣的魔法树屋大冒险.mp3](audio/24-莉莉和欣欣的魔法树屋大冒险.mp3) |
 | 25 | <img src="audio/thumbnails/25-寒假班的小勇气_thumb.jpeg" width="80" /> | [寒假班的小勇气](25-寒假班的小勇气.md) | [audio/25-寒假班的小勇气.mp3](audio/25-寒假班的小勇气.mp3) |
+| 26 | <img src="audio/thumbnails/26-魔法肥料花园的小意外_thumb.jpeg" width="80" /> | [魔法肥料花园的小意外](26-魔法肥料花园的小意外.md) | [audio/26-魔法肥料花园的小意外.mp3](audio/26-魔法肥料花园的小意外.mp3) |
 
 ## 关于创作方式
 
