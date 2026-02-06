@@ -36,6 +36,7 @@
 | 24 | <img src="audio/thumbnails/24-莉莉和欣欣的魔法树屋大冒险_thumb.jpeg" width="80" /> | [莉莉和欣欣的魔法树屋大冒险](24-莉莉和欣欣的魔法树屋大冒险.md) | [audio/24-莉莉和欣欣的魔法树屋大冒险.mp3](audio/24-莉莉和欣欣的魔法树屋大冒险.mp3) |
 | 25 | <img src="audio/thumbnails/25-寒假班的小勇气_thumb.jpeg" width="80" /> | [寒假班的小勇气](25-寒假班的小勇气.md) | [audio/25-寒假班的小勇气.mp3](audio/25-寒假班的小勇气.mp3) |
 | 26 | <img src="audio/thumbnails/26-魔法肥料花园的小意外_thumb.jpeg" width="80" /> | [魔法肥料花园的小意外](26-魔法肥料花园的小意外.md) | [audio/26-魔法肥料花园的小意外.mp3](audio/26-魔法肥料花园的小意外.mp3) |
+| 27 | <img src="audio/thumbnails/27-神奇土坑下的根须王国_thumb.jpeg" width="80" /> | [神奇土坑下的根须王国](27-神奇土坑下的根须王国.md) | [audio/27-神奇土坑下的根须王国.mp3](audio/27-神奇土坑下的根须王国.mp3) |
 
 ## 关于创作方式
 
