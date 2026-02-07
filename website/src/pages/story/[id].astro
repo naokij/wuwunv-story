@@ -1,0 +1,335 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import AudioPlayer from '../../components/AudioPlayer.astro';
+import storiesData from '../../data/stories.json';
+
+export function getStaticPaths() {
+  return storiesData.stories.map((story) => ({
+    params: { id: story.id },
+    props: { story },
+  }));
+}
+
+const { story } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
+
+// 获取上一篇和下一篇
+const sortedStories = storiesData.stories.sort((a, b) => {
+  const numA = parseInt(a.id.split('-')[0]);
+  const numB = parseInt(b.id.split('-')[0]);
+  return numA - numB;
+});
+
+const currentIndex = sortedStories.findIndex(s => s.id === story.id);
+const prevStory = currentIndex > 0 ? sortedStories[currentIndex - 1] : null;
+const nextStory = currentIndex < sortedStories.length - 1 ? sortedStories[currentIndex + 1] : null;
+
+// 格式化内容（简单处理 Markdown 格式）
+const formatContent = (content: string) => {
+  return content
+    .split('\n\n')
+    .filter(p => p.trim())
+    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+    .join('');
+};
+---
+
+<Layout title={`${story.title} - 巫巫女睡前故事集`} description={story.description}>
+  <Header showBack />
+  
+  <main class="story-page">
+    <article class="story-container">
+      <!-- 封面图 -->
+      <div class="cover-section">
+        <img src={story.cover} alt={story.title} class="story-cover" />
+      </div>
+      
+      <!-- 标题区域 -->
+      <header class="story-header">
+        <h1 class="story-title">「{story.title}」</h1>
+        <div class="story-meta">
+          {story.duration && (
+            <span class="meta-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 6v6l4 2"/>
+              </svg>
+              约 {story.duration}
+            </span>
+          )}
+          {story.date && (
+            <span class="meta-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              {story.date}
+            </span>
+          )}
+        </div>
+      </header>
+      
+      <!-- 音频播放器 -->
+      <div class="audio-section">
+        <AudioPlayer src={story.audio} title={story.title} />
+      </div>
+      
+      <!-- 故事正文 -->
+      <div class="story-content" set:html={formatContent(story.content)} />
+      
+      <!-- 分页导航 -->
+      <nav class="story-nav">
+        {prevStory ? (
+          <a href={`${baseUrl}/story/${prevStory.id}`} class="nav-link prev">
+            <span class="nav-label">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M15 18l-6-6 6-6"/>
+              </svg>
+              上一篇
+            </span>
+            <span class="nav-title">{prevStory.title}</span>
+          </a>
+        ) : (
+          <div></div>
+        )}
+        
+        {nextStory ? (
+          <a href={`${baseUrl}/story/${nextStory.id}`} class="nav-link next">
+            <span class="nav-label">
+              下一篇
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </span>
+            <span class="nav-title">{nextStory.title}</span>
+          </a>
+        ) : (
+          <div></div>
+        )}
+      </nav>
+    </article>
+  </main>
+  
+  <footer class="footer">
+    <div class="footer-content">
+      <p class="footer-quote">「晚安，好梦。」</p>
+      <p class="footer-copy">© 2026 巫巫女睡前故事集 · 江乐</p>
+      <a href="https://github.com/naokij/wuwunv-story" target="_blank" rel="noopener" class="github-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  .story-page {
+    padding: 1rem 2rem 3rem;
+  }
+  
+  .story-container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  
+  .cover-section {
+    margin-bottom: 2rem;
+  }
+  
+  .story-cover {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+  
+  .story-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  
+  .story-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+  }
+  
+  .story-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    color: var(--color-text);
+    opacity: 0.7;
+    font-size: 0.9rem;
+  }
+  
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  
+  .audio-section {
+    margin-bottom: 2.5rem;
+    position: sticky;
+    top: 1rem;
+    z-index: 10;
+  }
+  
+  .story-content {
+    font-size: 1.1rem;
+    line-height: 2;
+    color: var(--color-text);
+  }
+  
+  .story-content :global(p) {
+    margin-bottom: 1.5em;
+    text-indent: 2em;
+  }
+  
+  .story-content :global(p:first-of-type) {
+    text-indent: 0;
+  }
+  
+  .story-content :global(p:first-of-type::before) {
+    content: "";
+    display: inline-block;
+    width: 2em;
+  }
+  
+  .story-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: var(--color-card);
+    border-radius: 12px;
+    transition: all 0.2s;
+    max-width: 280px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  
+  .nav-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+  
+  .nav-link.prev {
+    align-items: flex-start;
+  }
+  
+  .nav-link.next {
+    align-items: flex-end;
+    text-align: right;
+  }
+  
+  .nav-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-accent);
+  }
+  
+  .nav-title {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+  
+  .footer {
+    padding: 3rem 2rem;
+    text-align: center;
+    border-top: 1px solid var(--color-border);
+  }
+  
+  .footer-content {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .footer-quote {
+    font-size: 1.1rem;
+    color: var(--color-accent);
+    margin-bottom: 1rem;
+    font-style: italic;
+  }
+  
+  .footer-copy {
+    font-size: 0.85rem;
+    color: var(--color-text);
+    opacity: 0.6;
+    margin-bottom: 0.75rem;
+  }
+  
+  .github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-accent);
+    transition: opacity 0.2s;
+  }
+  
+  .github-link:hover {
+    opacity: 0.8;
+  }
+  
+  @media (max-width: 640px) {
+    .story-page {
+      padding: 0.5rem 1rem 2rem;
+    }
+    
+    .story-title {
+      font-size: 1.5rem;
+    }
+    
+    .story-meta {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .story-content {
+      font-size: 1.05rem;
+      line-height: 1.9;
+    }
+    
+    .story-nav {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .nav-link {
+      max-width: 100%;
+    }
+    
+    .nav-link.next {
+      align-items: flex-start;
+      text-align: left;
+    }
+    
+    .audio-section {
+      position: static;
+    }
+  }
+</style>

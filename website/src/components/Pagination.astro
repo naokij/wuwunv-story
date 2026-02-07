@@ -1,0 +1,152 @@
+---
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+}
+
+const { currentPage, totalPages, baseUrl } = Astro.props;
+
+// 生成分页链接
+const getPageUrl = (page: number) => {
+  if (page === 1) return `${baseUrl}/`;
+  return `${baseUrl}/page/${page}`;
+};
+
+// 计算显示的页码范围
+const getPageNumbers = () => {
+  const pages: (number | string)[] = [];
+  const delta = 2;
+  
+  for (let i = 1; i <= totalPages; i++) {
+    if (
+      i === 1 ||
+      i === totalPages ||
+      (i >= currentPage - delta && i <= currentPage + delta)
+    ) {
+      pages.push(i);
+    } else if (pages[pages.length - 1] !== '...') {
+      pages.push('...');
+    }
+  }
+  
+  return pages;
+};
+
+const pageNumbers = getPageNumbers();
+---
+
+<nav class="pagination" aria-label="分页">
+  {currentPage > 1 && (
+    <a href={getPageUrl(currentPage - 1)} class="page-btn prev">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+      上一页
+    </a>
+  )}
+  
+  <div class="page-numbers">
+    {pageNumbers.map((page) => (
+      typeof page === 'number' ? (
+        <a
+          href={getPageUrl(page)}
+          class={`page-number ${page === currentPage ? 'active' : ''}`}
+          aria-current={page === currentPage ? 'page' : undefined}
+        >
+          {page}
+        </a>
+      ) : (
+        <span class="ellipsis">{page}</span>
+      )
+    ))}
+  </div>
+  
+  {currentPage < totalPages && (
+    <a href={getPageUrl(currentPage + 1)} class="page-btn next">
+      下一页
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 18l6-6-6-6"/>
+      </svg>
+    </a>
+  )}
+</nav>
+
+<style>
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 3rem;
+    padding: 2rem 0;
+  }
+  
+  .page-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    border-radius: 24px;
+    background: var(--color-card);
+    color: var(--color-text);
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  
+  .page-btn:hover {
+    background: var(--color-accent);
+    color: white;
+    transform: translateY(-2px);
+  }
+  
+  .page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .page-number {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+  }
+  
+  .page-number:hover {
+    background: rgba(184, 169, 201, 0.1);
+  }
+  
+  .page-number.active {
+    background: var(--color-accent);
+    color: white;
+  }
+  
+  .ellipsis {
+    color: var(--color-text);
+    opacity: 0.5;
+    padding: 0 0.5rem;
+  }
+  
+  @media (max-width: 640px) {
+    .pagination {
+      gap: 0.5rem;
+    }
+    
+    .page-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+    }
+    
+    .page-number {
+      width: 36px;
+      height: 36px;
+      font-size: 0.9rem;
+    }
+  }
+</style>

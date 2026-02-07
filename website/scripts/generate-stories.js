@@ -1,0 +1,133 @@
+#!/usr/bin/env node
+/**
+ * 从故事 Markdown 文件生成 stories.json
+ * 用法: node scripts/generate-stories.js
+ */
+
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const ROOT_DIR = path.resolve(__dirname, '../..');
+const OUTPUT_FILE = path.resolve(__dirname, '../src/data/stories.json');
+
+// GitHub 仓库配置
+const GITHUB_USER = 'naokij';
+const REPO_NAME = 'wuwunv-story';
+const BRANCH = 'main';
+
+// 生成 GitHub Raw URL
+const getAudioUrl = (filename) => {
+  return `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRANCH}/audio/${filename}`;
+};
+
+// 使用 GitHub 的图片，但添加尺寸限制参数（通过 weserv.nl 代理压缩）
+const getCoverUrl = (filename) => {
+  const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRANCH}/audio/${filename}`;
+  // 使用 weserv.nl 图片代理服务，自动压缩和格式转换
+  return `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=400&h=500&fit=cover&q=85&output=webp`;
+};
+
+// 解析 frontmatter
+const parseFrontmatter = (content) => {
+  const match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!match) return { data: {}, content: content.trim() };
+  
+  const fm = match[1];
+  const body = match[2].trim();
+  
+  const data = {};
+  fm.split('\n').forEach(line => {
+    const colonIndex = line.indexOf(':');
+    if (colonIndex > 0) {
+      const key = line.slice(0, colonIndex).trim();
+      let value = line.slice(colonIndex + 1).trim();
+      if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.slice(1, -1);
+      }
+      data[key] = value;
+    }
+  });
+  
+  return { data, content: body };
+};
+
+const extractTitle = (markdownTitle) => {
+  return markdownTitle.replace(/^#\s*/, '').trim();
+};
+
+const estimateDuration = (content) => {
+  const wordCount = content.length;
+  const minutes = Math.ceil(wordCount / 800);
+  return `${minutes} 分钟`;
+};
+
+const extractDescription = (content) => {
+  const text = content.replace(/^#\s*.*\n/m, '').trim();
+  return text.slice(0, 100).replace(/\n/g, ' ') + '...';
+};
+
+async function generateStories() {
+  const stories = [];
+  
+  const files = await fs.readdir(ROOT_DIR);
+  const mdFiles = files.filter(f => /^\d+-.*\.md$/.test(f));
+  
+  for (const file of mdFiles.sort()) {
+    const id = file.replace('.md', '');
+    const num = id.split('-')[0];
+    
+    if (num === '00') continue;
+    
+    const filePath = path.join(ROOT_DIR, file);
+    const content = await fs.readFile(filePath, 'utf-8');
+    const { data, content: body } = parseFrontmatter(content);
+    
+    const titleMatch = body.match(/^#\s*(.+)$/m);
+    const title = data.title || (titleMatch ? extractTitle(titleMatch[0]) : id);
+    
+    const coverJpg = `${id}.jpg`;
+    const coverJpeg = `${id}.jpeg`;
+    let coverFile = coverJpg;
+    try {
+      await fs.access(path.join(ROOT_DIR, 'audio', coverJpg));
+    } catch {
+      try {
+        await fs.access(path.join(ROOT_DIR, 'audio', coverJpeg));
+        coverFile = coverJpeg;
+      } catch {
+        coverFile = null;
+      }
+    }
+    
+    const audioFile = `${id}.mp3`;
+    
+    stories.push({
+      id,
+      title,
+      description: extractDescription(body),
+      date: '',
+      duration: estimateDuration(body),
+      cover: coverFile ? getCoverUrl(coverFile) : '',
+      audio: getAudioUrl(audioFile),
+      content: body.replace(/^#\s*.*\n/m, '').trim(),
+    });
+  }
+  
+  stories.sort((a, b) => {
+    const numA = parseInt(a.id.split('-')[0]);
+    const numB = parseInt(b.id.split('-')[0]);
+    return numA - numB;
+  });
+  
+  const output = { stories };
+  
+  await fs.mkdir(path.dirname(OUTPUT_FILE), { recursive: true });
+  await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf-8');
+  
+  console.log(`✓ 已生成 ${stories.length} 个故事的数据`);
+  console.log(`✓ 输出文件: ${OUTPUT_FILE}`);
+}
+
+generateStories().catch(console.error);

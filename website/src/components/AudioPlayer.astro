@@ -1,0 +1,248 @@
+---
+interface Props {
+  src: string;
+  title: string;
+}
+
+const { src, title } = Astro.props;
+---
+
+<div class="audio-player" data-src={src}>
+  <button class="play-btn" aria-label="播放">
+    <svg class="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M8 5v14l11-7z"/>
+    </svg>
+    <svg class="pause-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+    </svg>
+  </button>
+  
+  <div class="progress-container">
+    <div class="time current">00:00</div>
+    <div class="progress-bar">
+      <div class="progress-fill"></div>
+      <input type="range" class="progress-input" min="0" max="100" value="0" aria-label="进度">
+    </div>
+    <div class="time duration">--:--</div>
+  </div>
+  
+  <button class="volume-btn" aria-label="音量">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+    </svg>
+  </button>
+</div>
+
+<style>
+  .audio-player {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, rgba(184, 169, 201, 0.1), rgba(245, 208, 197, 0.1));
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(184, 169, 201, 0.2);
+  }
+  
+  .play-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  
+  .play-btn:hover {
+    transform: scale(1.05);
+    background: var(--color-accent-dark);
+  }
+  
+  .play-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .progress-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .time {
+    font-size: 0.8rem;
+    color: var(--color-text);
+    opacity: 0.7;
+    font-variant-numeric: tabular-nums;
+    min-width: 40px;
+  }
+  
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(184, 169, 201, 0.2);
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-accent-dark));
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+  
+  .progress-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+  
+  .volume-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--color-accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  
+  .volume-btn:hover {
+    background: rgba(184, 169, 201, 0.1);
+  }
+  
+  @media (max-width: 640px) {
+    .audio-player {
+      padding: 0.75rem 1rem;
+      gap: 0.75rem;
+    }
+    
+    .play-btn {
+      width: 44px;
+      height: 44px;
+    }
+    
+    .time {
+      font-size: 0.75rem;
+      min-width: 36px;
+    }
+    
+    .volume-btn {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const players = document.querySelectorAll('.audio-player');
+    
+    players.forEach(player => {
+      const src = player.dataset.src;
+      if (!src) return;
+      
+      const audio = new Audio(src);
+      const playBtn = player.querySelector('.play-btn');
+      const playIcon = player.querySelector('.play-icon');
+      const pauseIcon = player.querySelector('.pause-icon');
+      const progressFill = player.querySelector('.progress-fill');
+      const progressInput = player.querySelector('.progress-input');
+      const currentTimeEl = player.querySelector('.time.current');
+      const durationEl = player.querySelector('.time.duration');
+      
+      let isPlaying = false;
+      
+      // 格式化时间
+      const formatTime = (seconds: number) => {
+        if (isNaN(seconds)) return '--:--';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      };
+      
+      // 加载元数据
+      audio.addEventListener('loadedmetadata', () => {
+        durationEl.textContent = formatTime(audio.duration);
+        progressInput.max = String(audio.duration);
+      });
+      
+      // 播放/暂停
+      playBtn.addEventListener('click', () => {
+        if (isPlaying) {
+          audio.pause();
+        } else {
+          // 暂停其他播放器
+          players.forEach(p => {
+            if (p !== player) {
+              const btn = p.querySelector('.play-btn');
+              btn?.dispatchEvent(new Event('pause-audio'));
+            }
+          });
+          audio.play();
+        }
+      });
+      
+      // 监听自定义暂停事件
+      playBtn.addEventListener('pause-audio', () => {
+        audio.pause();
+      });
+      
+      audio.addEventListener('play', () => {
+        isPlaying = true;
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+      });
+      
+      audio.addEventListener('pause', () => {
+        isPlaying = false;
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+      });
+      
+      audio.addEventListener('ended', () => {
+        isPlaying = false;
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        progressFill.style.width = '0%';
+        progressInput.value = '0';
+        currentTimeEl.textContent = '00:00';
+      });
+      
+      // 进度更新
+      audio.addEventListener('timeupdate', () => {
+        const percent = (audio.currentTime / audio.duration) * 100;
+        progressFill.style.width = `${percent}%`;
+        progressInput.value = String(audio.currentTime);
+        currentTimeEl.textContent = formatTime(audio.currentTime);
+      });
+      
+      // 拖动进度条
+      progressInput.addEventListener('input', (e) => {
+        const target = e.target as HTMLInputElement;
+        const time = parseFloat(target.value);
+        audio.currentTime = time;
+        const percent = (time / audio.duration) * 100;
+        progressFill.style.width = `${percent}%`;
+      });
+    });
+  });
+</script>

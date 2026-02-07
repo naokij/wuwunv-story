@@ -1,0 +1,31 @@
+{
+  "stories": [
+    {
+      "id": "01-巫巫女的心变了",
+      "title": "巫巫女的心变了",
+      "description": "森林深处有座歪歪扭扭的小木屋，住着一个名叫巫巫女的女巫...",
+      "duration": "2 分钟",
+      "cover": "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&h=500&fit=crop",
+      "audio": "",
+      "content": "森林深处有座歪歪扭扭的小木屋，住着一个名叫巫巫女的女巫。她有一头乱蓬蓬的紫头发，尖尖的鼻子总是气呼呼地皱着..."
+    },
+    {
+      "id": "02-巫巫女的月光坚果",
+      "title": "巫巫女的月光坚果",
+      "description": "夜晚的森林像被盖上了一层软软的黑绒毯...",
+      "duration": "2 分钟",
+      "cover": "https://images.unsplash.com/photo-1507400492013-162706c8c05e?w=400&h=500&fit=crop",
+      "audio": "",
+      "content": "夜晚的森林像被盖上了一层软软的黑绒毯，萤火虫提着小灯笼在草丛间轻轻飞舞..."
+    },
+    {
+      "id": "03-巫巫女的声音宝藏",
+      "title": "巫巫女的声音宝藏",
+      "description": "清晨的森林呀，本该是大自然的演唱会呢...",
+      "duration": "3 分钟",
+      "cover": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=500&fit=crop",
+      "audio": "",
+      "content": "清晨的森林呀，本该是大自然的演唱会呢——小鸟站在枝头，叽叽喳喳唱着甜甜的晨曲..."
+    }
+  ]
+}

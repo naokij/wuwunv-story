@@ -1,0 +1,94 @@
+---
+interface Props {
+  id: string;
+  title: string;
+  cover: string;
+  duration?: string;
+  description?: string;
+}
+
+const { id, title, cover, duration, description } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
+---
+
+<article class="story-card">
+  <a href={`${baseUrl}/story/${id}`} class="card-link">
+    <div class="cover-wrapper">
+      <img src={cover} alt={title} loading="lazy" />
+    </div>
+    <div class="card-content">
+      <h3 class="title">{title}</h3>
+      {duration && (
+        <div class="meta">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 6v6l4 2"/>
+          </svg>
+          <span>{duration}</span>
+        </div>
+      )}
+    </div>
+  </a>
+</article>
+
+<style>
+  .story-card {
+    background: var(--color-card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .story-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+  
+  .card-link {
+    display: block;
+  }
+  
+  .cover-wrapper {
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: linear-gradient(135deg, rgba(184, 169, 201, 0.1), rgba(245, 208, 197, 0.1));
+  }
+  
+  .cover-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+  
+  .story-card:hover .cover-wrapper img {
+    transform: scale(1.05);
+  }
+  
+  .card-content {
+    padding: 1.25rem;
+    text-align: center;
+  }
+  
+  .title {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+  
+  .meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-accent);
+  }
+  
+  .meta svg {
+    opacity: 0.7;
+  }
+</style>
