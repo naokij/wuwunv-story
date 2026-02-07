@@ -7,6 +7,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { parseFile } from 'music-metadata';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '../..');
@@ -57,10 +58,23 @@ const extractTitle = (markdownTitle) => {
   return markdownTitle.replace(/^#\s*/, '').trim();
 };
 
-const estimateDuration = (content) => {
-  const wordCount = content.length;
-  const minutes = Math.ceil(wordCount / 800);
-  return `${minutes} 分钟`;
+// 从音频文件获取实际时长
+const getAudioDuration = async (audioPath) => {
+  try {
+    const metadata = await parseFile(audioPath);
+    const duration = metadata.format.duration;
+    if (duration) {
+      const minutes = Math.floor(duration / 60);
+      const seconds = Math.floor(duration % 60);
+      if (seconds > 0) {
+        return `${minutes}分${seconds}秒`;
+      }
+      return `${minutes} 分钟`;
+    }
+  } catch (e) {
+    // 如果读取失败，返回空字符串
+  }
+  return '';
 };
 
 const extractDescription = (content) => {
@@ -102,13 +116,15 @@ async function generateStories() {
     }
     
     const audioFile = `${id}.mp3`;
+    const audioPath = path.join(ROOT_DIR, 'audio', audioFile);
+    const duration = await getAudioDuration(audioPath);
     
     stories.push({
       id,
       title,
       description: extractDescription(body),
       date: '',
-      duration: estimateDuration(body),
+      duration,
       cover: coverFile ? getCoverUrl(coverFile) : '',
       audio: getAudioUrl(audioFile),
       content: body.replace(/^#\s*.*\n/m, '').trim(),
