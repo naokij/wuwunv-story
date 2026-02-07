@@ -1,10 +1,13 @@
 ---
+import storiesData from '../data/stories.json';
+
 interface Props {
   showBack?: boolean;
 }
 
 const { showBack = false } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
+const storyCount = storiesData.stories.length;
 ---
 
 <header style="padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto;">
@@ -23,6 +26,6 @@ const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
     </a>
   </div>
   <div style="display: flex; align-items: center; gap: 1.5rem;">
-    <span style="font-size: 0.9rem; color: var(--color-accent);">27 个温暖故事</span>
+    <span style="font-size: 0.9rem; color: var(--color-accent);">{storyCount} 个温暖故事</span>
   </div>
 </header>
