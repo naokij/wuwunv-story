@@ -37,6 +37,7 @@
 | 25 | <img src="audio/thumbnails/25-寒假班的小勇气_thumb.jpeg" width="80" /> | [寒假班的小勇气](25-寒假班的小勇气.md) | [audio/25-寒假班的小勇气.mp3](audio/25-寒假班的小勇气.mp3) |
 | 26 | <img src="audio/thumbnails/26-魔法肥料花园的小意外_thumb.jpeg" width="80" /> | [魔法肥料花园的小意外](26-魔法肥料花园的小意外.md) | [audio/26-魔法肥料花园的小意外.mp3](audio/26-魔法肥料花园的小意外.mp3) |
 | 27 | <img src="audio/thumbnails/27-神奇土坑下的根须王国_thumb.jpeg" width="80" /> | [神奇土坑下的根须王国](27-神奇土坑下的根须王国.md) | [audio/27-神奇土坑下的根须王国.mp3](audio/27-神奇土坑下的根须王国.mp3) |
+| 28 | <img src="audio/thumbnails/28-巫巫女的零食美妆铺_thumb.jpeg" width="80" /> | [巫巫女的零食美妆铺](28-巫巫女的零食美妆铺.md) | [audio/28-巫巫女的零食美妆铺.mp3](audio/28-巫巫女的零食美妆铺.mp3) |
 
 ## 关于创作方式
 
