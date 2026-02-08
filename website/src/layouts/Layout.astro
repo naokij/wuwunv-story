@@ -92,33 +92,32 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境',
         margin-bottom: 4px;
       }
       
-      /* 全局拼音开关 */
+      /* 全局拼音开关 - 固定在右上角 */
       .global-pinyin-toggle {
         position: fixed;
-        bottom: 2rem;
-        right: 2rem;
+        top: 1rem;
+        right: 1rem;
         z-index: 100;
       }
       
       .global-pinyin-toggle .toggle-btn {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.8rem 1.2rem;
+        gap: 0.4rem;
+        padding: 0.5rem 1rem;
         background: var(--color-card);
-        border-radius: 50px;
+        border-radius: 20px;
         cursor: pointer;
         transition: all 0.2s;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         border: 2px solid var(--color-accent);
         font-family: inherit;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         color: var(--color-text);
       }
       
       .global-pinyin-toggle .toggle-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
       }
       
       .global-pinyin-toggle .toggle-btn.active {
@@ -127,8 +126,8 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境',
       }
       
       .global-pinyin-toggle .toggle-btn svg {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
       }
     </style>
   </head>
@@ -153,9 +152,12 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境',
         const btn = document.getElementById('global-pinyin-btn');
         const btnText = document.getElementById('pinyin-btn-text');
         
-        // 获取保存的状态
+        // 获取保存的状态（默认为 true）
         function getPinyinState() {
-          return localStorage.getItem(STORAGE_KEY) === 'true';
+          const value = localStorage.getItem(STORAGE_KEY);
+          // 如果从未设置过，返回 true（默认开启）
+          if (value === null) return true;
+          return value === 'true';
         }
         
         // 保存状态
@@ -194,7 +196,7 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境',
           }
         }
         
-        // 初始化
+        // 初始化（默认开启拼音）
         const isEnabled = getPinyinState();
         updateDisplay(isEnabled);
         
