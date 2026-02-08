@@ -85,23 +85,57 @@ const extractDescription = (content) => {
 
 // 生成带拼音的 HTML 内容
 const generatePinyinContent = (content) => {
-  // 对内容按字符处理，给每个汉字添加拼音
+  // 对内容按行处理
   const lines = content.split('\n');
   
   return lines.map(line => {
     if (!line.trim()) return '';
     
-    // 逐字符处理
     let result = '';
-    for (const char of line) {
-      // 只给汉字加拼音
+    let currentChineseChunk = '';
+    let chunkStartIndices = [];
+    
+    // 第一遍：收集连续汉字段落
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
       if (/[\u4e00-\u9fa5]/.test(char)) {
-        const py = pinyin(char, { toneType: 'symbol', type: 'string' })[0] || '';
-        result += `<ruby class="pinyin-ruby"><rb>${char}</rb><rt>${py}</rt></ruby>`;
+        currentChineseChunk += char;
+        chunkStartIndices.push(i);
       } else {
+        // 遇到非汉字，处理之前的汉字段落
+        if (currentChineseChunk) {
+          const pyArray = pinyin(currentChineseChunk, {
+            toneType: 'symbol',
+            type: 'array',
+            segment: true
+          });
+          // 回填拼音
+          for (let j = 0; j < currentChineseChunk.length; j++) {
+            const char = currentChineseChunk[j];
+            const py = pyArray[j] ? pyArray[j][0] : '';
+            result += `<ruby class="pinyin-ruby"><rb>${char}</rb><rt>${py}</rt></ruby>`;
+          }
+          currentChineseChunk = '';
+          chunkStartIndices = [];
+        }
         result += char;
       }
     }
+    
+    // 处理行尾可能剩余的汉字
+    if (currentChineseChunk) {
+      const pyArray = pinyin(currentChineseChunk, {
+        toneType: 'symbol',
+        type: 'array',
+        segment: true
+      });
+      for (let j = 0; j < currentChineseChunk.length; j++) {
+        const char = currentChineseChunk[j];
+        const py = pyArray[j] ? pyArray[j][0] : '';
+        result += `<ruby class="pinyin-ruby"><rb>${char}</rb><rt>${py}</rt></ruby>`;
+      }
+    }
+    
     return result;
   }).join('\n');
 };
