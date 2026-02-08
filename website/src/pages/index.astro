@@ -6,7 +6,7 @@ import Pagination from '../components/Pagination.astro';
 import storiesData from '../data/stories.json';
 
 const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
-const STORIES_PER_PAGE = 9;
+const STORIES_PER_PAGE = 8;  // 8能被2整除，iPad mini竖屏(2列)时正好4行，不会最后一行只有一个
 
 // 按ID排序（01, 02, 03...）
 const sortedStories = storiesData.stories.sort((a, b) => {
@@ -139,6 +139,7 @@ const stories = sortedStories.slice(0, STORIES_PER_PAGE);
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
+    justify-content: center;  /* 水平居中 */
   }
   
   @media (max-width: 1024px) {
