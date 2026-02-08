@@ -6,7 +6,7 @@ import Pagination from '../../components/Pagination.astro';
 import storiesData from '../../data/stories.json';
 
 export function getStaticPaths() {
-  const STORIES_PER_PAGE = 8;  // 与首页一致，确保iPad mini竖屏(2列)时布局整齐
+  const STORIES_PER_PAGE = 6;  // 与首页一致，6是2和3的最小公倍数
   const totalStories = storiesData.stories.length;
   const totalPages = Math.ceil(totalStories / STORIES_PER_PAGE);
   
@@ -21,7 +21,7 @@ export function getStaticPaths() {
 
 const { pageNum, totalPages } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
-const STORIES_PER_PAGE = 9;
+const STORIES_PER_PAGE = 6;
 
 // 按ID排序
 const sortedStories = storiesData.stories.sort((a, b) => {
@@ -115,7 +115,6 @@ const stories = sortedStories.slice(start, start + STORIES_PER_PAGE);
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
-    justify-content: center;  /* 水平居中 */
   }
   
   @media (max-width: 1024px) {
