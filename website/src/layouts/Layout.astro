@@ -167,7 +167,7 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境',
         function updateDisplay(enabled) {
           document.body.classList.toggle('pinyin-enabled', enabled);
           
-          // 切换普通内容和拼音内容
+          // 切换普通内容和拼音内容（故事页）
           const normalContents = document.querySelectorAll('.story-content-normal');
           const pinyinContents = document.querySelectorAll('.story-content-pinyin');
           const normalTitles = document.querySelectorAll('.story-title-normal');
@@ -177,6 +177,13 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境',
           pinyinContents.forEach(el => el.style.display = enabled ? 'block' : 'none');
           normalTitles.forEach(el => el.style.display = enabled ? 'none' : 'block');
           pinyinTitles.forEach(el => el.style.display = enabled ? 'block' : 'none');
+          
+          // 切换卡片标题（首页和列表页）
+          const cardNormalTitles = document.querySelectorAll('.title-normal');
+          const cardPinyinTitles = document.querySelectorAll('.title-pinyin');
+          
+          cardNormalTitles.forEach(el => el.style.display = enabled ? 'none' : 'block');
+          cardPinyinTitles.forEach(el => el.style.display = enabled ? 'block' : 'none');
           
           // 更新按钮状态
           if (btn) {
