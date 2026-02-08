@@ -47,8 +47,8 @@ const formatContent = (content: string) => {
       
       <!-- 标题区域 -->
       <header class="story-header">
-        <h1 id="story-title-normal" class="story-title">「{story.title}」</h1>
-        <h1 id="story-title-pinyin" class="story-title story-title-pinyin" style="display: none;" set:html={`「${story.titleWithPinyin || story.title}」`} />
+        <h1 class="story-title story-title-normal">「{story.title}」</h1>
+        <h1 class="story-title story-title-pinyin" style="display: none;" set:html={`「${story.titleWithPinyin || story.title}」`} />
         <div class="story-meta">
           {story.duration && (
             <span class="meta-item">
@@ -78,22 +78,9 @@ const formatContent = (content: string) => {
         <AudioPlayer src={story.audio} title={story.title} />
       </div>
       
-      <!-- 拼音开关 -->
-      <div class="pinyin-toggle">
-        <label class="toggle-label">
-          <input type="checkbox" id="pinyin-toggle" />
-          <span class="toggle-text">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
-            </svg>
-            显示拼音
-          </span>
-        </label>
-      </div>
-      
       <!-- 故事正文 -->
-      <div id="story-content-normal" class="story-content" set:html={formatContent(story.content)} />
-      <div id="story-content-pinyin" class="story-content story-content-pinyin" style="display: none;" set:html={formatContent(story.contentWithPinyin || story.content)} />
+      <div class="story-content story-content-normal" set:html={formatContent(story.content)} />
+      <div class="story-content story-content-pinyin" style="display: none;" set:html={formatContent(story.contentWithPinyin || story.content)} />
       
       <!-- 分页导航 -->
       <nav class="story-nav">
@@ -140,31 +127,6 @@ const formatContent = (content: string) => {
       </a>
     </div>
   </footer>
-  
-  <script>
-    // 拼音显示切换
-    const pinyinToggle = document.getElementById('pinyin-toggle');
-    const normalContent = document.getElementById('story-content-normal');
-    const pinyinContent = document.getElementById('story-content-pinyin');
-    const normalTitle = document.getElementById('story-title-normal');
-    const pinyinTitle = document.getElementById('story-title-pinyin');
-    
-    if (pinyinToggle && normalContent && pinyinContent) {
-      pinyinToggle.addEventListener('change', (e) => {
-        if (e.target.checked) {
-          normalContent.style.display = 'none';
-          pinyinContent.style.display = 'block';
-          if (normalTitle) normalTitle.style.display = 'none';
-          if (pinyinTitle) pinyinTitle.style.display = 'block';
-        } else {
-          normalContent.style.display = 'block';
-          pinyinContent.style.display = 'none';
-          if (normalTitle) normalTitle.style.display = 'block';
-          if (pinyinTitle) pinyinTitle.style.display = 'none';
-        }
-      });
-    }
-  </script>
 </Layout>
 
 <style>
@@ -248,91 +210,10 @@ const formatContent = (content: string) => {
     width: 2em;
   }
   
-  /* 拼音开关样式 */
-  .pinyin-toggle {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-  }
-  
-  .toggle-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1.2rem;
-    background: var(--color-card);
-    border-radius: 24px;
-    cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 2px solid transparent;
-  }
-  
-  .toggle-label:hover {
-    border-color: var(--color-accent);
-  }
-  
-  .toggle-label input {
-    display: none;
-  }
-  
-  .toggle-text {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.9rem;
-    color: var(--color-text);
-    user-select: none;
-  }
-  
-  .toggle-label:has(input:checked) {
-    background: var(--color-accent);
-    border-color: var(--color-accent);
-  }
-  
-  .toggle-label:has(input:checked) .toggle-text {
-    color: white;
-  }
-  
-  /* 拼音标注样式 */
-  .story-content-pinyin :global(.pinyin-ruby),
-  .story-title-pinyin :global(.pinyin-ruby) {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    vertical-align: bottom;
-    margin: 0 2px;
-    line-height: 1.3;
-  }
-  
-  .story-content-pinyin :global(.pinyin-ruby rb) {
+  /* 统一普通内容和拼音内容的字体大小 */
+  .story-content-normal :global(p) {
     font-size: 1.15rem;
-  }
-  
-  .story-content-pinyin :global(.pinyin-ruby rt) {
-    font-size: 0.85rem;
-    color: var(--color-accent-dark);
-    font-weight: 500;
-    margin-bottom: 3px;
-    letter-spacing: 0.5px;
-  }
-  
-  /* 标题拼音样式 */
-  .story-title-pinyin {
-    font-size: 1.5rem;
-    line-height: 1.5;
-  }
-  
-  .story-title-pinyin :global(.pinyin-ruby rb) {
-    font-size: 1.5rem;
-  }
-  
-  .story-title-pinyin :global(.pinyin-ruby rt) {
-    font-size: 0.9rem;
-    color: var(--color-accent-dark);
-    font-weight: 500;
-    margin-bottom: 4px;
-    letter-spacing: 0.5px;
+    line-height: 2;
   }
   
   .story-nav {

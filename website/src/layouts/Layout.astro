@@ -2,9 +2,10 @@
 interface Props {
   title: string;
   description?: string;
+  showPinyinToggle?: boolean;
 }
 
-const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境' } = Astro.props;
+const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境', showPinyinToggle = true } = Astro.props;
 ---
 
 <!doctype html>
@@ -41,7 +42,7 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境' 
       }
       
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        font-family: "KaiTi", "STKaiti", "BiauKai", "楷体", "华文楷体", "PingFang SC", "Microsoft YaHei", serif;
         background-color: var(--color-bg);
         color: var(--color-text);
         line-height: 1.8;
@@ -58,9 +59,154 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境' 
         height: auto;
         display: block;
       }
+      
+      /* 全局拼音样式 */
+      .pinyin-ruby {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        vertical-align: bottom;
+        margin: 0 2px;
+        line-height: 1.3;
+      }
+      
+      .pinyin-ruby rb {
+        font-size: 1.15rem;
+      }
+      
+      .pinyin-ruby rt {
+        font-size: 0.85rem;
+        color: var(--color-accent-dark);
+        font-weight: 500;
+        margin-bottom: 3px;
+        letter-spacing: 0.5px;
+      }
+      
+      /* 标题拼音样式 */
+      .story-title-pinyin .pinyin-ruby rb {
+        font-size: 1.5rem;
+      }
+      
+      .story-title-pinyin .pinyin-ruby rt {
+        font-size: 0.9rem;
+        margin-bottom: 4px;
+      }
+      
+      /* 全局拼音开关 */
+      .global-pinyin-toggle {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 100;
+      }
+      
+      .global-pinyin-toggle .toggle-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.8rem 1.2rem;
+        background: var(--color-card);
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border: 2px solid var(--color-accent);
+        font-family: inherit;
+        font-size: 0.95rem;
+        color: var(--color-text);
+      }
+      
+      .global-pinyin-toggle .toggle-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+      }
+      
+      .global-pinyin-toggle .toggle-btn.active {
+        background: var(--color-accent);
+        color: white;
+      }
+      
+      .global-pinyin-toggle .toggle-btn svg {
+        width: 18px;
+        height: 18px;
+      }
     </style>
   </head>
   <body>
     <slot />
+    
+    {showPinyinToggle && (
+      <div class="global-pinyin-toggle">
+        <button class="toggle-btn" id="global-pinyin-btn" aria-label="切换拼音">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+          </svg>
+          <span id="pinyin-btn-text">拼音</span>
+        </button>
+      </div>
+    )}
+    
+    <script>
+      // 全局拼音开关逻辑
+      (function() {
+        const STORAGE_KEY = 'wuwunv-pinyin-enabled';
+        const btn = document.getElementById('global-pinyin-btn');
+        const btnText = document.getElementById('pinyin-btn-text');
+        
+        // 获取保存的状态
+        function getPinyinState() {
+          return localStorage.getItem(STORAGE_KEY) === 'true';
+        }
+        
+        // 保存状态
+        function setPinyinState(enabled) {
+          localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+        }
+        
+        // 更新页面显示
+        function updateDisplay(enabled) {
+          document.body.classList.toggle('pinyin-enabled', enabled);
+          
+          // 切换普通内容和拼音内容
+          const normalContents = document.querySelectorAll('.story-content-normal');
+          const pinyinContents = document.querySelectorAll('.story-content-pinyin');
+          const normalTitles = document.querySelectorAll('.story-title-normal');
+          const pinyinTitles = document.querySelectorAll('.story-title-pinyin');
+          
+          normalContents.forEach(el => el.style.display = enabled ? 'none' : 'block');
+          pinyinContents.forEach(el => el.style.display = enabled ? 'block' : 'none');
+          normalTitles.forEach(el => el.style.display = enabled ? 'none' : 'block');
+          pinyinTitles.forEach(el => el.style.display = enabled ? 'block' : 'none');
+          
+          // 更新按钮状态
+          if (btn) {
+            btn.classList.toggle('active', enabled);
+          }
+          if (btnText) {
+            btnText.textContent = enabled ? '隐藏拼音' : '显示拼音';
+          }
+        }
+        
+        // 初始化
+        const isEnabled = getPinyinState();
+        updateDisplay(isEnabled);
+        
+        // 绑定点击事件
+        if (btn) {
+          btn.addEventListener('click', () => {
+            const newState = !getPinyinState();
+            setPinyinState(newState);
+            updateDisplay(newState);
+          });
+        }
+        
+        // 监听 storage 变化（多标签页同步）
+        window.addEventListener('storage', (e) => {
+          if (e.key === STORAGE_KEY) {
+            updateDisplay(getPinyinState());
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
