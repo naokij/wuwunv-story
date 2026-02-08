@@ -179,10 +179,12 @@ async function generateStories() {
     
     const cleanContent = body.replace(/^#\s*.*\n/m, '').trim();
     const pinyinContent = generatePinyinContent(cleanContent);
+    const titleWithPinyin = generatePinyinContent(title);
     
     stories.push({
       id,
       title,
+      titleWithPinyin,
       description: extractDescription(body),
       date: '',
       duration,
