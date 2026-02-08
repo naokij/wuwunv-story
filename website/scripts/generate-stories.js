@@ -8,6 +8,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { parseFile } from 'music-metadata';
+import { pinyin } from 'pinyin';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '../..');
@@ -82,6 +83,29 @@ const extractDescription = (content) => {
   return text.slice(0, 100).replace(/\n/g, ' ') + '...';
 };
 
+// 生成带拼音的 HTML 内容
+const generatePinyinContent = (content) => {
+  // 对内容按字符处理，给每个汉字添加拼音
+  const lines = content.split('\n');
+  
+  return lines.map(line => {
+    if (!line.trim()) return '';
+    
+    // 逐字符处理
+    let result = '';
+    for (const char of line) {
+      // 只给汉字加拼音
+      if (/[\u4e00-\u9fa5]/.test(char)) {
+        const py = pinyin(char, { toneType: 'symbol', type: 'string' })[0] || '';
+        result += `<ruby class="pinyin-ruby"><rb>${char}</rb><rt>${py}</rt></ruby>`;
+      } else {
+        result += char;
+      }
+    }
+    return result;
+  }).join('\n');
+};
+
 async function generateStories() {
   const stories = [];
   
@@ -119,6 +143,9 @@ async function generateStories() {
     const audioPath = path.join(ROOT_DIR, 'audio', audioFile);
     const duration = await getAudioDuration(audioPath);
     
+    const cleanContent = body.replace(/^#\s*.*\n/m, '').trim();
+    const pinyinContent = generatePinyinContent(cleanContent);
+    
     stories.push({
       id,
       title,
@@ -127,7 +154,8 @@ async function generateStories() {
       duration,
       cover: coverFile ? getCoverUrl(coverFile) : '',
       audio: getAudioUrl(audioFile),
-      content: body.replace(/^#\s*.*\n/m, '').trim(),
+      content: cleanContent,
+      contentWithPinyin: pinyinContent,
     });
   }
   
