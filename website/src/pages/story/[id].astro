@@ -48,7 +48,7 @@ const formatContent = (content: string) => {
       <!-- 标题区域 -->
       <header class="story-header">
         <h1 id="story-title-normal" class="story-title">「{story.title}」</h1>
-        <h1 id="story-title-pinyin" class="story-title story-title-pinyin" style="display: none;">「<span set:html={story.titleWithPinyin || story.title} />」</h1>
+        <h1 id="story-title-pinyin" class="story-title story-title-pinyin" style="display: none;" set:html={`「${story.titleWithPinyin || story.title}」`} />
         <div class="story-meta">
           {story.duration && (
             <span class="meta-item">
