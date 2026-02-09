@@ -39,6 +39,7 @@
 | 27 | <img src="audio/thumbnails/27-神奇土坑下的根须王国_thumb.jpeg" width="80" /> | [神奇土坑下的根须王国](27-神奇土坑下的根须王国.md) | [audio/27-神奇土坑下的根须王国.mp3](audio/27-神奇土坑下的根须王国.mp3) |
 | 28 | <img src="audio/thumbnails/28-巫巫女的零食美妆铺_thumb.jpeg" width="80" /> | [巫巫女的零食美妆铺](28-巫巫女的零食美妆铺.md) | [audio/28-巫巫女的零食美妆铺.mp3](audio/28-巫巫女的零食美妆铺.mp3) |
 | 29 | <img src="audio/thumbnails/29-莉莉和欣欣的彩虹果汁店_thumb.jpeg" width="80" /> | [莉莉和欣欣的彩虹果汁店](29-莉莉和欣欣的彩虹果汁店.md) | [audio/29-莉莉和欣欣的彩虹果汁店.mp3](audio/29-莉莉和欣欣的彩虹果汁店.mp3) |
+| 30 | <img src="audio/thumbnails/30-巫巫女的礼物交换小铺_thumb.jpeg" width="80" /> | [巫巫女的礼物交换小铺](30-巫巫女的礼物交换小铺.md) | [audio/30-巫巫女的礼物交换小铺.mp3](audio/30-巫巫女的礼物交换小铺.mp3) |
 
 ## 关于创作方式
 
