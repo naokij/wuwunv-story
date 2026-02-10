@@ -229,14 +229,20 @@ python scripts/batch_add_metadata.py --dry-run
 验证音频文件的元数据和封面。
 
 ```bash
+# 基本用法（自动清理临时封面文件）
 python scripts/verify_audio.py audio/01-巫巫女的心变了.mp3
+
+# 提取封面保存到文件（需要手动删除）
+python scripts/verify_audio.py audio/01-巫巫女的心变了.mp3 --extract-cover
 ```
 
 验证脚本会显示：
 - ✓ 基本信息（时长、比特率等）
 - ✓ 元数据（标题、艺术家、专辑、类型）
-- ✓ 封面信息（MIME 类型、大小，并会提取封面保存为文件）
+- ✓ 封面信息（MIME 类型、大小，默认自动清理临时文件）
 - ✓ 简介和全文信息
+
+**注意**：默认模式下，验证脚本会创建临时封面文件用于验证，验证完成后自动删除。如需保留封面文件，请使用 `--extract-cover` 参数。
 
 ### 传统工具（备用）
 

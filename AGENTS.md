@@ -464,7 +464,7 @@ python scripts/verify_audio.py <MP3文件>
    python scripts/generate_thumbnails.py
    ```
 8. **更新 README**：在 README.md 的故事目录表格中添加新故事行
-9. **验证结果**：
+9. **验证结果**（临时封面文件会自动清理）：
    ```bash
    python scripts/verify_audio.py <生成的MP3文件>
    ```

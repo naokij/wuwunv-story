@@ -18,11 +18,19 @@ except ImportError:
     sys.exit(1)
 
 
-def verify_audio(audio_path: str):
-    """验证音频文件的元数据和封面"""
+def verify_audio(audio_path: str, extract_cover: bool = False):
+    """验证音频文件的元数据和封面
+    
+    Args:
+        audio_path: MP3文件路径
+        extract_cover: 是否提取封面图片到文件（默认False，验证后自动清理）
+    """
     if not os.path.exists(audio_path):
         print(f"错误: 文件不存在: {audio_path}")
         return False
+    
+    # 用于记录生成的临时文件，最后统一清理
+    temp_files = []
     
     print(f"正在验证: {audio_path}\n")
     print("=" * 60)
@@ -94,12 +102,26 @@ def verify_audio(audio_path: str):
             }.get(mime, '.jpg')
             
             cover_path = Path(audio_path).parent / f"{Path(audio_path).stem}_cover{cover_ext}"
-            try:
-                with open(cover_path, 'wb') as f:
-                    f.write(apic_data)
-                print(f"    - 已保存到: {cover_path}")
-            except Exception as e:
-                print(f"    - 保存封面失败: {e}")
+            
+            if extract_cover:
+                # 用户明确要求提取封面，保存到文件
+                try:
+                    with open(cover_path, 'wb') as f:
+                        f.write(apic_data)
+                    print(f"    - 已保存到: {cover_path}")
+                    print(f"    - 提示: 使用 --extract-cover 参数提取的封面文件需要手动删除")
+                except Exception as e:
+                    print(f"    - 保存封面失败: {e}")
+            else:
+                # 默认模式：保存临时文件，验证后自动清理
+                try:
+                    with open(cover_path, 'wb') as f:
+                        f.write(apic_data)
+                    print(f"    - 临时文件: {cover_path}（验证后自动清理）")
+                    temp_files.append(cover_path)
+                except Exception as e:
+                    print(f"    - 创建临时文件失败: {e}")
+            
             apic_found = True
             break
     
@@ -170,20 +192,32 @@ def verify_audio(audio_path: str):
         if not has_content:
             print("    - 全文")
     
+    # 清理临时文件
+    if temp_files and not extract_cover:
+        print("\n【清理临时文件】")
+        for temp_file in temp_files:
+            try:
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+                    print(f"  ✓ 已删除: {temp_file}")
+            except Exception as e:
+                print(f"  ✗ 删除失败: {temp_file} - {e}")
+    
     return all_good
 
 
 def main():
     """主函数"""
-    if len(sys.argv) < 2:
-        print("用法:")
-        print("  python scripts/verify_audio.py <MP3文件>")
-        print("\n示例:")
-        print("  python scripts/verify_audio.py audio/01-巫巫女的心变了.mp3")
-        sys.exit(1)
+    import argparse
     
-    audio_path = sys.argv[1]
-    success = verify_audio(audio_path)
+    parser = argparse.ArgumentParser(description='验证 MP3 文件的元数据和封面')
+    parser.add_argument('audio_path', help='MP3 文件路径')
+    parser.add_argument('--extract-cover', action='store_true', 
+                        help='提取封面图片保存到文件（默认自动清理临时文件）')
+    
+    args = parser.parse_args()
+    
+    success = verify_audio(args.audio_path, extract_cover=args.extract_cover)
     sys.exit(0 if success else 1)
 
 
