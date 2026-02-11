@@ -25,10 +25,11 @@ const getAudioUrl = (filename) => {
 };
 
 // 使用 GitHub 的图片，但添加尺寸限制参数（通过 weserv.nl 代理压缩）
-const getCoverUrl = (filename) => {
+const getCoverUrl = (filename, timestamp = Date.now()) => {
   const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRANCH}/audio/${filename}`;
   // 使用 weserv.nl 图片代理服务，自动压缩和格式转换
-  return `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=400&h=500&fit=cover&q=85&output=webp`;
+  // 添加 timestamp 参数以破坏 CDN 缓存，强制获取最新图片
+  return `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=400&h=500&fit=cover&q=85&output=webp&ts=${timestamp}`;
 };
 
 // 解析 frontmatter
