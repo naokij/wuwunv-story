@@ -27,7 +27,7 @@ const getAudioUrl = (filename) => {
 // 生成列表封面 URL（使用 CDN 压缩）
 const getCoverUrl = (filename, timestamp = Date.now()) => {
   const rawUrl = `https://raw.githubusercontent.com/${GITHUB_USER}/${REPO_NAME}/${BRANCH}/audio/${filename}`;
-  return `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=400&h=400&fit=contain&q=85&output=webp&ts=${timestamp}`;
+  return `https://images.weserv.nl/?url=${encodeURIComponent(rawUrl)}&w=400&h=400&fit=contain&q=95&output=webp&ts=${timestamp}`;
 };
 
 // 生成详情封面 URL（使用原始图片）
