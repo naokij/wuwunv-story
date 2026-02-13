@@ -104,7 +104,8 @@ JIMENG_REGION = "cn-north-1"
 JIMENG_REQ_KEY = "jimeng_t2i_v40"
 
 # 图像宽高比: 16:9, 4:3, 1:1, 3:4, 9:16
-JIMENG_ASPECT_RATIO = "16:9"
+# 推荐使用 1:1 正方形，适合网站列表和详情页展示
+JIMENG_ASPECT_RATIO = "1:1"
 
 # 图像质量: standard, high
 JIMENG_IMAGE_QUALITY = os.environ.get("IMAGE_QUALITY", "high")
