@@ -43,6 +43,7 @@
 | 31 | <img src="audio/thumbnails/31-莉莉和欣欣的感恩小卡片_thumb.jpeg" width="80" /> | [莉莉和欣欣的感恩小卡片](31-莉莉和欣欣的感恩小卡片.md) | [audio/31-莉莉和欣欣的感恩小卡片.mp3](audio/31-莉莉和欣欣的感恩小卡片.mp3) |
 | 32 | <img src="audio/thumbnails/32-欣欣的安慰小手帕_thumb.jpeg" width="80" /> | [欣欣的安慰小手帕](32-欣欣的安慰小手帕.md) | [audio/32-欣欣的安慰小手帕.mp3](audio/32-欣欣的安慰小手帕.mp3) |
 | 33 | <img src="audio/thumbnails/33-画本漂流记_thumb.jpeg" width="80" /> | [画本漂流记](33-画本漂流记.md) | [audio/33-画本漂流记.mp3](audio/33-画本漂流记.mp3) |
+| 34 | <img src="audio/thumbnails/34-小迷糊也有大光芒_thumb.jpeg" width="80" /> | [小迷糊也有大光芒](34-小迷糊也有大光芒.md) | [audio/34-小迷糊也有大光芒.mp3](audio/34-小迷糊也有大光芒.mp3) |
 
 ## 关于创作方式
 
