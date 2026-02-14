@@ -21,7 +21,7 @@ from config import (
     VOLCENGINE_APP_ID,
     JIMENG_IMAGE_QUALITY,
     JIMENG_REFERENCE_WEIGHT,
-    IMAGE_SIZE,
+    JIMENG_ASPECT_RATIO,
     IMAGE_QUALITY,
     CHARACTERS,
     REFERENCES_DIR,
@@ -193,14 +193,18 @@ def generate_cover(story_file: str, force: bool = False) -> bool:
         app_id=VOLCENGINE_APP_ID
     )
     
+    # 在 prompt 中添加宽高比描述
+    prompt_with_ratio = f"{prompt}，1:1 正方形构图，square format 1:1 aspect ratio"
+    
     # 生成封面
     print("  正在提交任务到即梦 AI...")
     print("  提示: 生成可能需要 30-60 秒，请耐心等待...")
+    print(f"  使用宽高比: {JIMENG_ASPECT_RATIO}")
     result = jimeng.generate_image(
-        prompt=prompt,
+        prompt=prompt_with_ratio,
         reference_images=reference_images,
         reference_strength=JIMENG_REFERENCE_WEIGHT,
-        image_size=IMAGE_SIZE,
+        aspect_ratio=JIMENG_ASPECT_RATIO,
         quality=IMAGE_QUALITY,
         max_retries=3  # 增加重试次数
     )
