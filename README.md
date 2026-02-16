@@ -46,6 +46,7 @@
 | 34 | <img src="audio/thumbnails/34-小迷糊也有大光芒_thumb.jpeg" width="80" /> | [小迷糊也有大光芒](34-小迷糊也有大光芒.md) | [audio/34-小迷糊也有大光芒.mp3](audio/34-小迷糊也有大光芒.mp3) |
 | 35 | <img src="audio/thumbnails/35-手心里的勇气_thumb.jpeg" width="80" /> | [手心里的勇气](35-手心里的勇气.md) | [audio/35-手心里的勇气.mp3](audio/35-手心里的勇气.mp3) |
 | 36 | <img src="audio/thumbnails/36-棋盘上的小星星_thumb.jpeg" width="80" /> | [棋盘上的小星星](36-棋盘上的小星星.md) | [audio/36-棋盘上的小星星.mp3](audio/36-棋盘上的小星星.mp3) |
+| 37 | <img src="audio/thumbnails/37-巫巫女的除夕魔法饺子_thumb.jpeg" width="80" /> | [巫巫女的除夕魔法饺子](37-巫巫女的除夕魔法饺子.md) | [audio/37-巫巫女的除夕魔法饺子.mp3](audio/37-巫巫女的除夕魔法饺子.mp3) |
 
 ## 关于创作方式
 
