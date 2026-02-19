@@ -47,6 +47,8 @@
 | 35 | <img src="audio/thumbnails/35-手心里的勇气_thumb.jpeg" width="80" /> | [手心里的勇气](35-手心里的勇气.md) | [audio/35-手心里的勇气.mp3](audio/35-手心里的勇气.mp3) |
 | 36 | <img src="audio/thumbnails/36-棋盘上的小星星_thumb.jpeg" width="80" /> | [棋盘上的小星星](36-棋盘上的小星星.md) | [audio/36-棋盘上的小星星.mp3](audio/36-棋盘上的小星星.mp3) |
 | 37 | <img src="audio/thumbnails/37-巫巫女的除夕魔法饺子_thumb.jpeg" width="80" /> | [巫巫女的除夕魔法饺子](37-巫巫女的除夕魔法饺子.md) | [audio/37-巫巫女的除夕魔法饺子.mp3](audio/37-巫巫女的除夕魔法饺子.mp3) |
+| 38 | <img src="audio/thumbnails/38-巫巫女的新年红包_thumb.jpeg" width="80" /> | [巫巫女的新年红包](38-巫巫女的新年红包.md) | [audio/38-巫巫女的新年红包.mp3](audio/38-巫巫女的新年红包.mp3) |
+| 39 | <img src="audio/thumbnails/39-森林小老鼠的婚礼日_thumb.jpeg" width="80" /> | [森林小老鼠的婚礼日](39-森林小老鼠的婚礼日.md) | [audio/39-森林小老鼠的婚礼日.mp3](audio/39-森林小老鼠的婚礼日.mp3) |
 
 ## 关于创作方式
 
