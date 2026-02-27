@@ -50,6 +50,8 @@
 | 38 | <img src="audio/thumbnails/38-巫巫女的新年红包_thumb.jpeg" width="80" /> | [巫巫女的新年红包](38-巫巫女的新年红包.md) | [audio/38-巫巫女的新年红包.mp3](audio/38-巫巫女的新年红包.mp3) |
 | 39 | <img src="audio/thumbnails/39-森林小老鼠的婚礼日_thumb.jpeg" width="80" /> | [森林小老鼠的婚礼日](39-森林小老鼠的婚礼日.md) | [audio/39-森林小老鼠的婚礼日.mp3](audio/39-森林小老鼠的婚礼日.mp3) |
 | 40 | <img src="audio/thumbnails/40-莉莉和欣欣的奇妙一天_thumb.jpeg" width="80" /> | [莉莉和欣欣的奇妙一天](40-莉莉和欣欣的奇妙一天.md) | [audio/40-莉莉和欣欣的奇妙一天.mp3](audio/40-莉莉和欣欣的奇妙一天.mp3) |
+| 41 | <img src="audio/thumbnails/41-夜空小信使的美好礼物_thumb.jpeg" width="80" /> | [夜空小信使的美好礼物](41-夜空小信使的美好礼物.md) | [audio/41-夜空小信使的美好礼物.mp3](audio/41-夜空小信使的美好礼物.mp3) |
+| 42 | <img src="audio/thumbnails/42-小黑猫玩偶的回家之旅_thumb.jpeg" width="80" /> | [小黑猫玩偶的回家之旅](42-小黑猫玩偶的回家之旅.md) | [audio/42-小黑猫玩偶的回家之旅.mp3](audio/42-小黑猫玩偶的回家之旅.mp3) |
 
 ## 关于创作方式
 
