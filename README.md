@@ -53,6 +53,7 @@
 | 41 | <img src="audio/thumbnails/41-夜空小信使的美好礼物_thumb.jpeg" width="80" /> | [夜空小信使的美好礼物](41-夜空小信使的美好礼物.md) | [audio/41-夜空小信使的美好礼物.mp3](audio/41-夜空小信使的美好礼物.mp3) |
 | 42 | <img src="audio/thumbnails/42-小黑猫玩偶的回家之旅_thumb.jpeg" width="80" /> | [小黑猫玩偶的回家之旅](42-小黑猫玩偶的回家之旅.md) | [audio/42-小黑猫玩偶的回家之旅.mp3](audio/42-小黑猫玩偶的回家之旅.mp3) |
 | 43 | <img src="audio/thumbnails/43-舞鞋上的小星星_thumb.jpeg" width="80" /> | [舞鞋上的小星星](43-舞鞋上的小星星.md) | [audio/43-舞鞋上的小星星.mp3](audio/43-舞鞋上的小星星.mp3) |
+| 44 | <img src="audio/thumbnails/44-三个好朋友的春日茶会_thumb.jpeg" width="80" /> | [三个好朋友的春日茶会](44-三个好朋友的春日茶会.md) | [audio/44-三个好朋友的春日茶会.mp3](audio/44-三个好朋友的春日茶会.mp3) |
 
 ## 关于创作方式
 
