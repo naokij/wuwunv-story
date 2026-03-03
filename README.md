@@ -55,6 +55,7 @@
 | 43 | <img src="audio/thumbnails/43-舞鞋上的小星星_thumb.jpeg" width="80" /> | [舞鞋上的小星星](43-舞鞋上的小星星.md) | [audio/43-舞鞋上的小星星.mp3](audio/43-舞鞋上的小星星.mp3) |
 | 44 | <img src="audio/thumbnails/44-三个好朋友的春日茶会_thumb.jpeg" width="80" /> | [三个好朋友的春日茶会](44-三个好朋友的春日茶会.md) | [audio/44-三个好朋友的春日茶会.mp3](audio/44-三个好朋友的春日茶会.mp3) |
 | 45 | <img src="audio/thumbnails/45-开学日的惊喜_thumb.jpeg" width="80" /> | [开学日的惊喜](45-开学日的惊喜.md) | [audio/45-开学日的惊喜.mp3](audio/45-开学日的惊喜.mp3) |
+| 46 | <img src="audio/thumbnails/46-甜甜的礼物交换_thumb.jpeg" width="80" /> | [甜甜的礼物交换](46-甜甜的礼物交换.md) | [audio/46-甜甜的礼物交换.mp3](audio/46-甜甜的礼物交换.mp3) |
 
 ## 关于创作方式
 
