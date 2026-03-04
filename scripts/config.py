@@ -117,26 +117,80 @@ JIMENG_REFERENCE_WEIGHT = float(os.environ.get("REFERENCE_WEIGHT", "0.8"))
 # ==================== 角色配置 ====================
 
 # 角色参考图配置
+# 支持多参考图变体，可以在 frontmatter 中指定使用哪个版本
+# 格式：
+#   cover_characters:
+#     - name: 莉莉
+#       variant: winter
+#     - 巫巫女  # 使用默认版本
+#
+# 或者简写格式（向后兼容）：
+#   cover_characters:
+#     - 莉莉
+#     - 欣欣
+
 CHARACTERS = {
     "巫巫女": {
-        "reference_image": str(REFERENCES_DIR / "巫巫女_reference.jpg"),
-        "base_prompt": "巫巫女，乱蓬蓬的紫头发，尖尖的鼻子，穿着彩虹披风，温柔的女巫",
+        "default": "default",
+        "variants": {
+            "default": {
+                "reference_image": str(REFERENCES_DIR / "巫巫女_reference.jpg"),
+                "base_prompt": "巫巫女，乱蓬蓬的紫头发，尖尖的鼻子，穿着彩虹披风，温柔的女巫"
+            }
+        },
         "style": "温馨治愈风格，柔和的光线，童话插画风格",
-        # MiniMax 配置（从环境变量读取，所有角色使用同一个音色）
         "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
     },
     "莉莉": {
-        "reference_image": str(REFERENCES_DIR / "莉莉_reference.jpg"),
-        "base_prompt": "莉莉，6岁小女孩，扎着小辫子，穿着粉色连衣裙，可爱活泼",
+        "default": "winter",  # 目前只有冬季版，默认使用winter
+        "variants": {
+            "spring": {
+                "reference_image": str(REFERENCES_DIR / "莉莉_spring.jpg"),
+                "base_prompt": "莉莉，6岁小女孩，扎着小辫子，穿着粉色连衣裙，可爱活泼"
+            },
+            "winter": {
+                "reference_image": str(REFERENCES_DIR / "莉莉_winter.jpg"),
+                "base_prompt": "莉莉，6岁小女孩，扎着小辫子，穿着粉色羽绒服，戴毛线帽，可爱活泼"
+            }
+        },
         "style": "温馨治愈风格，柔和的光线，童话插画风格",
-        # MiniMax 配置（使用统一的音色）
         "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
     },
     "欣欣": {
-        "reference_image": str(REFERENCES_DIR / "欣欣_reference.jpg"),
-        "base_prompt": "欣欣，6岁小女孩，梳着丸子头，穿黄色羽绒服，戴毛线帽，手里拿着画本和画笔",
+        "default": "winter",  # 目前只有冬季版，默认使用winter
+        "variants": {
+            "spring": {
+                "reference_image": str(REFERENCES_DIR / "欣欣_spring.jpg"),
+                "base_prompt": "欣欣，6岁小女孩，梳着丸子头，穿浅黄色连衣裙，手里拿着画本和画笔"
+            },
+            "winter": {
+                "reference_image": str(REFERENCES_DIR / "欣欣_winter.jpg"),
+                "base_prompt": "欣欣，6岁小女孩，梳着丸子头，穿黄色羽绒服，戴毛线帽，手里拿着画本和画笔"
+            }
+        },
         "style": "温馨治愈风格，柔和的光线，童话插画风格",
-        # MiniMax 配置（使用统一的音色）
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
+    },
+    "小雅": {
+        "default": "default",
+        "variants": {
+            "default": {
+                "reference_image": str(REFERENCES_DIR / "小雅_reference.jpg"),
+                "base_prompt": "小雅，5岁小女孩，扎着马尾辫，穿着浅蓝色连衣裙，温柔可爱"
+            }
+        },
+        "style": "温馨治愈风格，柔和的光线，童话插画风格",
+        "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
+    },
+    "谦谦": {
+        "default": "default",
+        "variants": {
+            "default": {
+                "reference_image": str(REFERENCES_DIR / "谦谦_reference.jpg"),
+                "base_prompt": "谦谦，6岁小男孩，短发，穿着蓝色T恤和卡其色短裤，阳光开朗"
+            }
+        },
+        "style": "温馨治愈风格，柔和的光线，童话插画风格",
         "minimax_voice_id": os.environ.get("MINIMAX_VOICE_ID", "")
     }
 }
@@ -188,9 +242,11 @@ def validate_config():
 
     # 检查角色参考图
     for char_name, char_config in CHARACTERS.items():
-        ref_image = char_config["reference_image"]
-        if not Path(ref_image).exists():
-            errors.append(f"角色参考图不存在: {ref_image}")
+        variants = char_config.get("variants", {})
+        for variant_name, variant_config in variants.items():
+            ref_image = variant_config.get("reference_image", "")
+            if ref_image and not Path(ref_image).exists():
+                errors.append(f"角色 '{char_name}' 的 '{variant_name}' 参考图不存在: {ref_image}")
 
     return errors
 
@@ -207,7 +263,6 @@ def print_config():
     print("API 配置:")
     print(f"  MiniMax API Key: {'已设置' if MINIMAX_API_KEY else '未设置'}")
     print(f"  MiniMax Voice ID: {MINIMAX_VOICE_ID if MINIMAX_VOICE_ID else '未设置'}")
-    print(f"  MiniMax Emotion: {MINIMAX_EMOTION}")
     print(f"  火山引擎 Access Key: {'已设置' if VOLCENGINE_ACCESS_KEY else '未设置'}")
     print(f"  火山引擎 Secret Key: {'已设置' if VOLCENGINE_SECRET_KEY else '未设置'}")
     print()

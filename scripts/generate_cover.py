@@ -74,7 +74,7 @@ def parse_frontmatter(content: str) -> dict:
     return frontmatter
 
 
-def extract_cover_config(story_file: str) -> tuple[str, list[str]]:
+def extract_cover_config(story_file: str) -> tuple[str, list[dict]]:
     """
     从故事文件中提取封面配置
     
@@ -82,7 +82,10 @@ def extract_cover_config(story_file: str) -> tuple[str, list[str]]:
         story_file: 故事文件路径
     
     Returns:
-        (封面提示词, 角色列表)
+        (封面提示词, 角色配置列表)
+        角色配置列表中的每个元素是字典：
+        - 简单格式：{"name": "角色名"}
+        - 完整格式：{"name": "角色名", "variant": "版本名"}
     """
     with open(story_file, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -94,37 +97,83 @@ def extract_cover_config(story_file: str) -> tuple[str, list[str]]:
     prompt = frontmatter.get('cover_prompt', '')
     
     # 获取角色列表
-    characters = frontmatter.get('cover_characters', [])
-    if not characters:
-        characters = frontmatter.get('cover_character', [])
+    raw_characters = frontmatter.get('cover_characters', [])
+    if not raw_characters:
+        raw_characters = frontmatter.get('cover_character', [])
+    
+    # 标准化角色配置
+    characters = []
+    for char in raw_characters:
+        if isinstance(char, str):
+            # 简单字符串格式："莉莉"
+            characters.append({"name": char})
+        elif isinstance(char, dict):
+            # 字典格式：{"name": "莉莉", "variant": "winter"}
+            if "name" in char:
+                characters.append(char)
+            else:
+                print(f"  ⚠ 角色配置缺少 name 字段: {char}")
+        else:
+            print(f"  ⚠ 未知的角色配置格式: {char}")
     
     return prompt, characters
 
 
-def get_reference_image(character: str) -> Path | None:
+def get_reference_image(character: str, variant: str = None) -> tuple[Path | None, str]:
     """
     获取角色的参考图片路径
     
     Args:
         character: 角色名称
+        variant: 变体名称（如 spring, winter），None 则使用默认变体
     
     Returns:
-        参考图片路径，不存在返回 None
+        (参考图片路径, 实际使用的变体名称)
+        如果参考图不存在，返回 (None, "")
     """
     character_config = CHARACTERS.get(character, {})
-    ref_image_path = character_config.get('reference_image')
+    
+    # 获取默认变体
+    default_variant = character_config.get('default', 'default')
+    
+    # 获取变体配置
+    variants = character_config.get('variants', {})
+    
+    if not variants:
+        return None, ""
+    
+    # 确定要使用的变体
+    target_variant = variant if variant else default_variant
+    
+    # 如果指定的变体不存在，回退到默认变体
+    if target_variant not in variants:
+        if target_variant != default_variant:
+            print(f"  ⚠ 角色 '{character}' 的变体 '{target_variant}' 不存在，使用默认变体 '{default_variant}'")
+        target_variant = default_variant
+    
+    # 如果默认变体也不存在，尝试第一个可用的变体
+    if target_variant not in variants:
+        target_variant = list(variants.keys())[0]
+    
+    # 获取参考图路径
+    variant_config = variants.get(target_variant, {})
+    ref_image_path = variant_config.get('reference_image', '')
     
     if ref_image_path:
         ref_path = Path(ref_image_path)
         if ref_path.exists():
-            return ref_path
+            return ref_path, target_variant
     
-    # 尝试使用默认参考图
-    default_ref = REFERENCES_DIR / f"{character}_reference.jpg"
+    # 尝试使用默认参考图命名
+    if target_variant == 'default':
+        default_ref = REFERENCES_DIR / f"{character}_reference.jpg"
+    else:
+        default_ref = REFERENCES_DIR / f"{character}_{target_variant}.jpg"
+    
     if default_ref.exists():
-        return default_ref
+        return default_ref, target_variant
     
-    return None
+    return None, ""
 
 
 def generate_cover(story_file: str, force: bool = False) -> bool:
@@ -161,7 +210,8 @@ def generate_cover(story_file: str, force: bool = False) -> bool:
         return False
     
     print(f"  提示词: {prompt}")
-    print(f"  角色: {', '.join(characters) if characters else '无'}")
+    char_names = [c.get('name', '') for c in characters]
+    print(f"  角色: {', '.join(char_names) if char_names else '无'}")
     print()
     
     # 检查 API 密钥
@@ -172,13 +222,24 @@ def generate_cover(story_file: str, force: bool = False) -> bool:
     
     # 获取参考图片
     reference_images = []
-    for character in characters:
-        ref_path = get_reference_image(character)
+    for char_config in characters:
+        char_name = char_config.get('name', '')
+        char_variant = char_config.get('variant')
+        
+        ref_path, used_variant = get_reference_image(char_name, char_variant)
         if ref_path:
             reference_images.append(ref_path)
-            print(f"  参考图: {ref_path.name}")
+            if used_variant == 'default':
+                print(f"  参考图: {ref_path.name} ({char_name})")
+            else:
+                print(f"  参考图: {ref_path.name} ({char_name} - {used_variant}版)")
     
     if reference_images:
+        # 限制参考图数量（API限制，太多会导致请求过大）
+        MAX_REF_IMAGES = 2
+        if len(reference_images) > MAX_REF_IMAGES:
+            print(f"  ⚠ 参考图数量过多 ({len(reference_images)}张)，只使用前{MAX_REF_IMAGES}张")
+            reference_images = reference_images[:MAX_REF_IMAGES]
         print(f"  参考图数量: {len(reference_images)}")
         print(f"  参考权重: {JIMENG_REFERENCE_WEIGHT}")
     else:
