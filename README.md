@@ -58,6 +58,7 @@
 | 46 | <img src="audio/thumbnails/46-甜甜的礼物交换_thumb.jpeg" width="80" /> | [甜甜的礼物交换](46-甜甜的礼物交换.md) | [audio/46-甜甜的礼物交换.mp3](audio/46-甜甜的礼物交换.mp3) |
 | 47 | <img src="audio/thumbnails/47-粉粉粉和黄黄黄的奇妙旅程_thumb.jpeg" width="80" /> | [粉粉粉和黄黄黄的奇妙旅程](47-粉粉粉和黄黄黄的奇妙旅程.md) | [audio/47-粉粉粉和黄黄黄的奇妙旅程.mp3](audio/47-粉粉粉和黄黄黄的奇妙旅程.mp3) |
 | 48 | <img src="audio/thumbnails/48-莉莉妈妈的生日惊喜_thumb.jpeg" width="80" /> | [莉莉妈妈的生日惊喜](48-莉莉妈妈的生日惊喜.md) | [audio/48-莉莉妈妈的生日惊喜.mp3](audio/48-莉莉妈妈的生日惊喜.mp3) |
+| 49 | <img src="audio/thumbnails/49-莉莉的向日葵_thumb.jpeg" width="80" /> | [莉莉的向日葵](49-莉莉的向日葵.md) | [audio/49-莉莉的向日葵.mp3](audio/49-莉莉的向日葵.mp3) |
 
 ## 关于创作方式
 
