@@ -60,6 +60,7 @@
 | 48 | <img src="audio/thumbnails/48-莉莉妈妈的生日惊喜_thumb.jpeg" width="80" /> | [莉莉妈妈的生日惊喜](48-莉莉妈妈的生日惊喜.md) | [audio/48-莉莉妈妈的生日惊喜.mp3](audio/48-莉莉妈妈的生日惊喜.mp3) |
 | 49 | <img src="audio/thumbnails/49-莉莉的向日葵_thumb.jpeg" width="80" /> | [莉莉的向日葵](49-莉莉的向日葵.md) | [audio/49-莉莉的向日葵.mp3](audio/49-莉莉的向日葵.mp3) |
 | 50 | <img src="audio/thumbnails/50-小雅的画本旅行箱_thumb.jpeg" width="80" /> | [小雅的画本旅行箱](50-小雅的画本旅行箱.md) | [audio/50-小雅的画本旅行箱.mp3](audio/50-小雅的画本旅行箱.mp3) |
+| 51 | <img src="audio/thumbnails/51-粉色蛋糕的女神魔法_thumb.jpeg" width="80" /> | [粉色蛋糕的女神魔法](51-粉色蛋糕的女神魔法.md) | [audio/51-粉色蛋糕的女神魔法.mp3](audio/51-粉色蛋糕的女神魔法.mp3) |
 
 ## 关于创作方式
 
