@@ -280,8 +280,35 @@ VOLCENGINE_APP_ID=your_app_id
 **准备角色参考图**：
 在 `audio/references/` 目录中准备角色参考图：
 - `巫巫女_reference.jpg` - 巫巫女的角色形象
-- `莉莉_reference.jpg` - 莉莉的角色形象
-- `欣欣_reference.jpg` - 欣欣的角色形象
+- `莉莉_reference.jpg` - 莉莉的角色形象（默认冬季版）
+- `莉莉_spring.jpg` - 莉莉的春天版本（粉色连衣裙）
+- `莉莉_winter.jpg` - 莉莉的冬季版本（粉色羽绒服）
+- `欣欣_reference.jpg` - 欣欣的角色形象（默认冬季版）
+- `欣欣_spring.jpg` - 欣欣的春天版本（浅黄色连衣裙）
+- `欣欣_winter.jpg` - 欣欣的冬季版本（黄色羽绒服）
+- `小雅_reference.jpg` - 小雅的角色形象（浅蓝色连衣裙）
+
+**⚠️ 重要：角色变体选择**
+角色参考图支持季节变体（spring/winter），用于匹配故事发生的季节：
+- **spring（春天）**：角色穿连衣裙，适合春季、夏季故事
+- **winter（冬天）**：角色穿羽绒服，适合冬季故事
+
+在 frontmatter 中指定变体：
+```markdown
+---
+cover_characters:
+  - name: 莉莉
+    variant: spring      # 使用春天版本（粉色连衣裙）
+  - name: 欣欣
+    variant: spring      # 使用春天版本（浅黄色连衣裙）
+  - 巫巫女               # 使用默认版本
+---
+```
+
+**审核要点**：
+1. 检查故事发生的季节（如"三月的春风"→spring）
+2. 确认所有角色都指定了正确的 variant
+3. 审核封面时核对角色服装是否符合季节
 
 #### 2. 故事文件格式
 
