@@ -235,8 +235,8 @@ def generate_cover(story_file: str, force: bool = False) -> bool:
                 print(f"  参考图: {ref_path.name} ({char_name} - {used_variant}版)")
     
     if reference_images:
-        # 限制参考图数量（API限制，太多会导致请求过大）
-        MAX_REF_IMAGES = 2
+        # 限制参考图数量（即梦AI最多支持10张参考图）
+        MAX_REF_IMAGES = 8
         if len(reference_images) > MAX_REF_IMAGES:
             print(f"  ⚠ 参考图数量过多 ({len(reference_images)}张)，只使用前{MAX_REF_IMAGES}张")
             reference_images = reference_images[:MAX_REF_IMAGES]
