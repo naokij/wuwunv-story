@@ -62,6 +62,7 @@
 | 50 | <img src="audio/thumbnails/50-小雅的画本旅行箱_thumb.jpeg" width="80" /> | [小雅的画本旅行箱](50-小雅的画本旅行箱.md) | [audio/50-小雅的画本旅行箱.mp3](audio/50-小雅的画本旅行箱.mp3) |
 | 51 | <img src="audio/thumbnails/51-粉色蛋糕的女神魔法_thumb.jpeg" width="80" /> | [粉色蛋糕的女神魔法](51-粉色蛋糕的女神魔法.md) | [audio/51-粉色蛋糕的女神魔法.mp3](audio/51-粉色蛋糕的女神魔法.mp3) |
 | 52 | <img src="audio/thumbnails/52-巫巫女的影子舞会_thumb.jpeg" width="80" /> | [巫巫女的影子舞会](52-巫巫女的影子舞会.md) | [audio/52-巫巫女的影子舞会.mp3](audio/52-巫巫女的影子舞会.mp3) |
+| 53 | <img src="audio/thumbnails/53-巫巫女的纸飞机大赛_thumb.jpeg" width="80" /> | [巫巫女的纸飞机大赛](53-巫巫女的纸飞机大赛.md) | [audio/53-巫巫女的纸飞机大赛.mp3](audio/53-巫巫女的纸飞机大赛.mp3) |
 
 ## 关于创作方式
 
