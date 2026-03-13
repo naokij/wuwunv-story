@@ -65,6 +65,7 @@
 | 53 | <img src="audio/thumbnails/53-巫巫女的纸飞机大赛_thumb.jpeg" width="80" /> | [巫巫女的纸飞机大赛](53-巫巫女的纸飞机大赛.md) | [audio/53-巫巫女的纸飞机大赛.mp3](audio/53-巫巫女的纸飞机大赛.mp3) |
 | 54 | <img src="audio/thumbnails/54-迷路花瓣的回家地图_thumb.jpeg" width="80" /> | [迷路花瓣的回家地图](54-迷路花瓣的回家地图.md) | [audio/54-迷路花瓣的回家地图.mp3](audio/54-迷路花瓣的回家地图.mp3) |
 | 55 | <img src="audio/thumbnails/55-巫巫女的贪吃小树苗_thumb.jpeg" width="80" /> | [巫巫女的贪吃小树苗](55-巫巫女的贪吃小树苗.md) | [audio/55-巫巫女的贪吃小树苗.mp3](audio/55-巫巫女的贪吃小树苗.mp3) |
+| 56 | <img src="audio/thumbnails/56-巫巫女的春日平衡木_thumb.jpeg" width="80" /> | [巫巫女的春日平衡木](56-巫巫女的春日平衡木.md) | [audio/56-巫巫女的春日平衡木.mp3](audio/56-巫巫女的春日平衡木.mp3) |
 
 ## 关于创作方式
 
