@@ -36,10 +36,11 @@ wuwunv/
 │   ├── *.mp3              # 故事音频文件
 │   ├── *.jpeg/.jpg        # 封面图片
 │   ├── thumbnails/        # 缩略图
-│   └── references/        # 角色参考图（用于封面生成）
+│   └── references/        # 角色参考图（用于封面生成）+ 参考音频（用于本地TTS克隆）
 └── scripts/               # 音频处理和自动化工具脚本
     ├── generate_story.py          # 整合脚本（一键生成音频+封面）
-    ├── generate_audio.py          # 独立音频生成脚本
+    ├── generate_audio.py          # 独立音频生成脚本（MiniMax API）
+    ├── generate_audio_local.py    # 本地 TTS 生成脚本（Qwen3-TTS，免费）
     ├── generate_cover.py          # 独立封面生成脚本
     ├── minimax_api.py             # MiniMax TTS API 封装
     ├── volcengine_api.py          # 火山引擎即梦 AI API 封装
@@ -91,6 +92,7 @@ wuwunv/
 - **位置**：`audio/` 目录
 - **命名格式**：`编号-标题.mp3`（如 `01-巫巫女的心变了.mp3`）
 - **封面图片**：同名的 `.jpeg` 或 `.jpg` 文件
+- **参考音频**：`audio/references/taozi-ref.wav`（用于本地 TTS 声音克隆）
 
 ### 脚本工具
 
@@ -115,6 +117,43 @@ wuwunv/
   # 强制重新生成
   python scripts/generate_story.py "23-森林小动物的音乐狂欢日.md" --force
   ```
+
+**generate_audio_local.py** 🔊本地 TTS（免费）
+- 功能：使用本地 Qwen3-TTS 模型生成音频（无需 API 密钥，完全免费）
+- 特性：
+  - 支持声音克隆（使用参考音频克隆音色）
+  - 支持两种模型：0.6B（更快）和 1.7B（质量更高）
+  - 支持 WAV 和 MP3 输出格式
+  - 模型根据文本内容自动调整情感表达
+- **性能参考**：
+  - 0.6B 模型：约 0.32x 实时倍率（10分钟音频约需 31 分钟）
+  - 1.7B 模型：约 0.19x 实时倍率（10分钟音频约需 53 分钟）
+- **依赖安装**：
+  ```bash
+  # 安装 mlx-audio（首次使用）
+  pip install mlx-audio
+  ```
+- **模型下载**：
+  - 模型会在首次运行时自动从 HuggingFace 下载
+  - 缓存位置：`~/.cache/huggingface/hub/`
+  - 0.6B 模型：约 2.3 GB
+  - 1.7B 模型：约 4.2 GB
+  - 无需手动下载，脚本会自动处理
+- **使用示例**：
+  ```bash
+  # 使用默认 0.6B 模型生成
+  python scripts/generate_audio_local.py "01-巫巫女的心变了.md"
+  
+  # 使用 1.7B 模型（质量更高）
+  python scripts/generate_audio_local.py "01-巫巫女的心变了.md" --model 1.7b
+  
+  # 输出 MP3 格式
+  python scripts/generate_audio_local.py "01-巫巫女的心变了.md" --format mp3
+  
+  # 强制重新生成
+  python scripts/generate_audio_local.py "01-巫巫女的心变了.md" --force
+  ```
+- **参考音频**：`audio/references/taozi-ref.wav`（温柔女巫音色）
 
 **volcengine_api.py**
 - 功能：火山引擎 API 封装库
@@ -523,6 +562,30 @@ python scripts/verify_audio.py <MP3文件>
     python scripts/verify_audio.py "audio/故事文件名.mp3"
     ```
 
+### 创作新故事（本地 TTS 方式）🔊免费替代方案
+
+1. **阅读设定文档**：确保了解角色、场景、规则等核心设定
+2. **编写故事**：同上
+3. **安装依赖**：
+   ```bash
+   pip install mlx-audio
+   ```
+4. **生成音频**（首次运行会自动下载模型）：
+   - 模型自动从 HuggingFace 下载到 `~/.cache/huggingface/hub/`
+   - 0.6B 模型约 2.3 GB，1.7B 模型约 4.2 GB
+   ```bash
+   # 使用 0.6B 模型（更快，约 31 分钟/10 分钟音频）
+   python scripts/generate_audio_local.py "故事文件名.md"
+   
+   # 或使用 1.7B 模型（质量更高，约 53 分钟/10 分钟音频）
+   python scripts/generate_audio_local.py "故事文件名.md" --model 1.7b
+   ```
+5. **生成封面**（仍需火山引擎 API）：
+   ```bash
+   python scripts/generate_cover.py "故事文件名.md"
+   ```
+6. **嵌入元数据、生成缩略图、更新 README**：同上
+
 ### 创作新故事（传统方式）
 
 1. **阅读设定文档**：确保了解角色、场景、规则等核心设定
@@ -585,7 +648,7 @@ python scripts/verify_audio.py <MP3文件>
 ## 项目版本信息
 
 - 创建日期：2026年1月26日
-- 最后更新：2026年3月13日
+- 最后更新：2026年3月19日
 - 当前故事数：56篇
 - 维护者：江乐
 
@@ -601,6 +664,14 @@ python scripts/verify_audio.py <MP3文件>
 - 教育意义：每个人都有自己的节奏，快和慢都很好；合作时需要互相理解和迁就；害怕的时候可以说出来，可以寻求帮助；平衡不是僵硬不动，而是在动态中找到最适合自己的方式
 - 更新README.md和AGENTS.md
 - 当前故事数：56篇
+
+### 2026年3月19日
+- 新增本地 TTS 脚本 `scripts/generate_audio_local.py`（使用 Qwen3-TTS 模型，完全免费）
+- 新增参考音频 `audio/references/taozi-ref.wav`（用于声音克隆）
+- 特性：支持声音克隆、两种模型选择（0.6B/1.7B）、自动情感适配
+- 性能：0.6B 模型约 0.32x 实时倍率，1.7B 模型约 0.19x 实时倍率
+- 更新 AGENTS.md 文档
+- 模型缓存位置：`~/.cache/huggingface/hub/`（约 6.5 GB）
 
 ### 2026年3月11日
 - 新增第54篇故事《迷路花瓣的回家地图》（春季、合作、方向感主题）
