@@ -12,11 +12,11 @@ export function getStaticPaths() {
 }
 
 const { story } = Astro.props;
-const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
+const baseUrl = import.meta.env.BASE_URL || '/';
 
 const getCoverUrl = (coverPath) => {
   if (!coverPath) return '';
-  return coverPath.startsWith('/') ? `${baseUrl}${coverPath}` : coverPath;
+  return coverPath.startsWith('/') ? coverPath : `${baseUrl}/${coverPath}`;
 };
 
 // 获取上一篇和下一篇
@@ -90,7 +90,7 @@ const formatContent = (content: string) => {
       <!-- 分页导航 -->
       <nav class="story-nav">
         {prevStory ? (
-          <a href={`${baseUrl}/story/${prevStory.id}`} class="nav-link prev">
+          <a href={baseUrl ? `${baseUrl}/story/${prevStory.id}` : `/story/${prevStory.id}`} class="nav-link prev">
             <span class="nav-label">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 18l-6-6 6-6"/>
@@ -104,7 +104,7 @@ const formatContent = (content: string) => {
         )}
         
         {nextStory ? (
-          <a href={`${baseUrl}/story/${nextStory.id}`} class="nav-link next">
+          <a href={baseUrl ? `${baseUrl}/story/${nextStory.id}` : `/story/${nextStory.id}`} class="nav-link next">
             <span class="nav-label">
               下一篇
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

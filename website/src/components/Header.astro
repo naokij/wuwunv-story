@@ -6,21 +6,22 @@ interface Props {
 }
 
 const { showBack = false } = Astro.props;
-const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
+const baseUrl = import.meta.env.BASE_URL || '/';
 const storyCount = storiesData.stories.length;
+const homeUrl = baseUrl ? `${baseUrl}/` : '/';
 ---
 
 <header style="padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto;">
   <div style="display: flex; align-items: center; gap: 0.75rem;">
     {showBack && (
-      <a href={`${baseUrl}/`} style="display: flex; align-items: center; gap: 0.5rem; color: var(--color-accent); font-size: 0.9rem; margin-right: 1rem;">
+      <a href={homeUrl} style="display: flex; align-items: center; gap: 0.5rem; color: var(--color-accent); font-size: 0.9rem; margin-right: 1rem;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
         返回故事列表
       </a>
     )}
-    <a href={`${baseUrl}/`} style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 1.1rem;">
+    <a href={homeUrl} style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 1.1rem;">
       <span style="font-size: 1.3rem;">🏠</span>
       <span>巫巫女睡前故事集</span>
     </a>

@@ -9,12 +9,12 @@ interface Props {
 }
 
 const { id, title, cover, duration, description, titleWithPinyin } = Astro.props;
-const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
-const coverUrl = cover.startsWith('/') ? `${baseUrl}${cover}` : cover;
+const baseUrl = import.meta.env.BASE_URL || '/';
+const coverUrl = cover.startsWith('/') ? cover : `${baseUrl}/${cover}`;
 ---
 
 <article class="story-card">
-  <a href={`${baseUrl}/story/${id}`} class="card-link">
+  <a href={baseUrl ? `${baseUrl}/story/${id}` : `/story/${id}`} class="card-link">
     <div class="cover-wrapper">
       <img src={coverUrl} alt={title} loading="lazy" />
     </div>

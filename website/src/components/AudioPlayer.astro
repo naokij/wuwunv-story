@@ -5,8 +5,8 @@ interface Props {
 }
 
 const { src, title } = Astro.props;
-const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
-const audioSrc = src.startsWith('/') ? `${baseUrl}${src}` : src;
+const baseUrl = import.meta.env.BASE_URL || '/';
+const audioSrc = src.startsWith('/') ? src : `${baseUrl}/${src}`;
 ---
 
 <div class="audio-player" data-src={audioSrc}>
