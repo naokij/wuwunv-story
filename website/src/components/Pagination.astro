@@ -9,8 +9,8 @@ const { currentPage, totalPages, baseUrl } = Astro.props;
 
 // 生成分页链接
 const getPageUrl = (page: number) => {
-  if (page === 1) return baseUrl ? `${baseUrl}/` : '/';
-  return baseUrl ? `${baseUrl}/page/${page}` : `/page/${page}`;
+  if (page === 1) return baseUrl && baseUrl !== '/' ? `${baseUrl}/` : '/';
+  return baseUrl && baseUrl !== '/' ? `${baseUrl}/page/${page}` : `/page/${page}`;
 };
 
 // 计算显示的页码范围

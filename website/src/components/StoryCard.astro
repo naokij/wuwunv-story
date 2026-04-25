@@ -14,7 +14,7 @@ const coverUrl = cover.startsWith('/') ? cover : `${baseUrl}/${cover}`;
 ---
 
 <article class="story-card">
-  <a href={baseUrl ? `${baseUrl}/story/${id}` : `/story/${id}`} class="card-link">
+  <a href={baseUrl && baseUrl !== '/' ? `${baseUrl}/story/${id}` : `/story/${id}`} class="card-link">
     <div class="cover-wrapper">
       <img src={coverUrl} alt={title} loading="lazy" />
     </div>
