@@ -8,7 +8,7 @@ interface Props {
 const { showBack = false } = Astro.props;
 const baseUrl = import.meta.env.BASE_URL || '/';
 const storyCount = storiesData.stories.length;
-const homeUrl = baseUrl ? `${baseUrl}/` : '/';
+const homeUrl = baseUrl && baseUrl !== '/' ? `${baseUrl}/` : '/';
 ---
 
 <header style="padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto;">
