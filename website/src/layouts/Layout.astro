@@ -6,6 +6,8 @@ interface Props {
 }
 
 const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境', showPinyinToggle = true } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL || '/';
+const basePath = baseUrl && baseUrl !== '/' ? baseUrl : '';
 ---
 
 <!doctype html>
@@ -14,9 +16,9 @@ const { title, description = '巫巫女睡前故事集 - 温暖每一个梦境',
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/wuwunv-story/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/wuwunv-story/favicon.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/wuwunv-story/apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href={`${basePath}/favicon.svg`} />
+    <link rel="icon" type="image/png" sizes="32x32" href={`${basePath}/favicon.png`} />
+    <link rel="apple-touch-icon" sizes="180x180" href={`${basePath}/apple-touch-icon.png`} />
     
     <!-- PWA / iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
