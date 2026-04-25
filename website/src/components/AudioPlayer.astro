@@ -5,9 +5,11 @@ interface Props {
 }
 
 const { src, title } = Astro.props;
+const baseUrl = import.meta.env.BASE_URL || '/wuwunv-story';
+const audioSrc = src.startsWith('/') ? `${baseUrl}${src}` : src;
 ---
 
-<div class="audio-player" data-src={src}>
+<div class="audio-player" data-src={audioSrc}>
   <button class="play-btn" aria-label="播放">
     <svg class="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
       <path d="M8 5v14l11-7z"/>
