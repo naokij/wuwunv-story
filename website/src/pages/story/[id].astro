@@ -30,322 +30,797 @@ const currentIndex = sortedStories.findIndex(s => s.id === story.id);
 const prevStory = currentIndex > 0 ? sortedStories[currentIndex - 1] : null;
 const nextStory = currentIndex < sortedStories.length - 1 ? sortedStories[currentIndex + 1] : null;
 
-// 格式化内容（简单处理 Markdown 格式）
-const formatContent = (content: string) => {
-  return content
+// 把 ASR 字级时间戳对齐到当前可见的正文（content / contentWithPinyin）
+// 返回与 content 字符数严格等长的 charTimes 数组（含 \n/空白都用 prevEnd 占位）
+const PUNCT = new Set([
+  '\uFF0C', '\u3002', '\uFF01', '\uFF1F', '\u3001', '\uFF1B', '\uFF1A',
+  '\u201C', '\u201D', '\u2018', '\u2019',
+  '\uFF08', '\uFF09', '\u300A', '\u300B',
+  '\u2026', '\u2014', '\uFF5E', '\u00B7',
+  '\u300C', '\u300D', '\u300E', '\u300F',
+]);
+const isMatchChar = (c) => /[一-龥]/.test(c) || /[a-zA-Z0-9]/.test(c) || PUNCT.has(c);
+
+const escapeHtml = (s) => s
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;');
+
+/**
+ * 用 LCS 把 asrWords 对齐到 refChars（refChars 是 content 拆成的字符数组）。
+ * 返回与 refChars 严格等长的 [{t, d}] 数组：
+ *   - 匹配字符（汉字/数字/字母/标点）→ asrWords 对应时间戳
+ *   - 标点零时长（t===d===前字 end），二分查找 t<end 时跳过
+ *   - 空白字符（\n/空格/tab）→ 继承前字 end（用于跳过分隔符）
+ *   - 漏识别汉字 → 插值（t=前字 end，d=下一匹配字 t）
+ */
+function alignAsrToChars(refChars, asrWords) {
+  const n = refChars.length;
+  if (!asrWords || asrWords.length === 0) {
+    return refChars.map(() => ({ t: 0, d: 0 }));
+  }
+
+  // 收集 ref 中"可对齐"字符（汉字/数字/字母/标点，不含空白）
+  const refFiltered = [];   // [{origIdx, c}]
+  for (let i = 0; i < n; i++) {
+    if (isMatchChar(refChars[i])) refFiltered.push({ origIdx: i, c: refChars[i] });
+  }
+
+  const asrChars = asrWords;
+
+  const N = refFiltered.length, M = asrChars.length;
+  if (N === 0 || M === 0) return refChars.map(() => ({ t: 0, d: 0 }));
+
+  // LCS
+  const dp = Array.from({ length: N + 1 }, () => new Uint32Array(M + 1));
+  for (let i = 1; i <= N; i++) {
+    for (let j = 1; j <= M; j++) {
+      if (refFiltered[i - 1].c === asrChars[j - 1].c) dp[i][j] = dp[i - 1][j - 1] + 1;
+      else dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  const pairs = [];
+  let i = N, j = M;
+  while (i > 0 && j > 0) {
+    if (refFiltered[i - 1].c === asrChars[j - 1].c) {
+      pairs.push([i - 1, j - 1]);
+      i--; j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) i--;
+    else j--;
+  }
+  pairs.reverse();
+
+  const refToAsr = new Map();
+  for (const [ri, ai] of pairs) refToAsr.set(ri, ai);
+
+  // 过滤后序列的时间戳（处理标点零时长 / 漏识别插值）
+  const filteredTs = new Array(N);
+  let prevEnd = 0;
+  for (let k = 0; k < N; k++) {
+    const c = refFiltered[k].c;
+    const matched = refToAsr.get(k);
+    if (matched != null) {
+      const ac = asrChars[matched];
+      filteredTs[k] = { t: ac.t, d: ac.d };
+      prevEnd = ac.d;
+    } else if (PUNCT.has(c)) {
+      // 标点零时长：紧贴前字末尾
+      filteredTs[k] = { t: prevEnd, d: prevEnd };
+    } else {
+      // 漏识别汉字：插值（汉字不可零时长）
+      let nextT = prevEnd;
+      for (let kk = k + 1; kk < N; kk++) {
+        const m2 = refToAsr.get(kk);
+        if (m2 != null) { nextT = asrChars[m2].t; break; }
+      }
+      filteredTs[k] = { t: prevEnd, d: nextT };
+    }
+  }
+  // 单调性修复（汉字必须单调：上一字 d ≤ 下一字 t）
+  for (let k = 1; k < N; k++) {
+    if (filteredTs[k].t < filteredTs[k - 1].t) {
+      filteredTs[k].t = filteredTs[k - 1].t;
+      if (filteredTs[k].d < filteredTs[k].t) filteredTs[k].d = filteredTs[k].t;
+    }
+  }
+
+  // 修复 whisper 多字词组共享时间区间导致"跳字"：
+  // 对连续的、同 (t, d) 的非零时长字按字数等分；
+  // 标点零时长不参与等分（保持 t===d 的"贴前字"语义）。
+  for (let k = 0; k < N; ) {
+    // 找到连续的、同 (t, d) 的非零时长字组
+    if (filteredTs[k].d <= filteredTs[k].t) {
+      k++;  // 零时长直接跳过
+      continue;
+    }
+    let e = k + 1;
+    while (e < N
+        && filteredTs[e].t === filteredTs[k].t
+        && filteredTs[e].d === filteredTs[k].d
+        && filteredTs[e].d > filteredTs[e].t) {  // 必须非零时长
+      e++;
+    }
+    if (e - k > 1) {
+      // 等分 [t, d] 给 e - k 个字
+      const startT = filteredTs[k].t;
+      const endT = filteredTs[k].d;
+      const count = e - k;
+      const step = (endT - startT) / count;
+      for (let j = 0; j < count; j++) {
+        filteredTs[k + j].t = +(startT + j * step).toFixed(3);
+        filteredTs[k + j].d = +(startT + (j + 1) * step).toFixed(3);
+      }
+    }
+    k = e;
+  }
+
+  // 展开回原 refChars（严格等长）
+  //   - 匹配字符 → filteredTs[k]
+  //   - \n / 空白 → 继承前字 d（让二分查找跳过）
+  const result = new Array(n);
+  let prevMatchD = 0;
+  let fIdx = 0;
+  for (let i = 0; i < n; i++) {
+    if (isMatchChar(refChars[i])) {
+      const ts = filteredTs[fIdx++];
+      result[i] = ts;
+      prevMatchD = ts.d;
+    } else {
+      result[i] = { t: prevMatchD, d: prevMatchD };
+    }
+  }
+  return result;
+}
+
+/**
+ * 将正文（纯文本）转换为带字级 <span class="lyric-char"> 的 HTML。
+ * 段落以 \n\n 分隔，段落内保留 \n→<br>。
+ * charTimes 长度等于 content 字符数（包括 \n），按 1:1 映射。
+ */
+function formatContentWithTokens(content, charTimes) {
+  let pos = 0;
+  const blocks = content.split('\n\n').filter(p => p.trim());
+  return blocks.map(p => {
+    let html = '';
+    for (let i = 0; i < p.length; i++) {
+      const ch = p[i];
+      if (ch === '\n') { html += '<br>'; pos++; continue; }
+      const ct = charTimes[pos] || { t: 0, d: 0 };
+      if (isMatchChar(ch)) {
+        html += `<span class="lyric-char" data-t="${ct.t}" data-d="${ct.d}">${escapeHtml(ch)}</span>`;
+      } else {
+        html += escapeHtml(ch);
+      }
+      pos++;
+    }
+    // 跳过 \n\n 中的 \n\n
+    pos += 2;
+    return `<p>${html}</p>`;
+  }).join('');
+}
+
+/**
+ * 将拼音版正文（已经是 ruby HTML）包装一层 <span class="lyric-char">，
+ * 包裹位置：ruby 元素外面。
+ */
+function wrapPinyinWithTokens(pinyinHtml, charTimes) {
+  // 拼音版正文可能含 \n\n（段落分隔）和 \n（行内换行）。
+  // 按 \n\n 切成段落，每段单独包 <p>，段内的 \n 转 <br>。
+  // 标点（包括引号、叹号、句号等）由 alignAsrToChars 处理为 t=d=prevEnd（零时长）。
+  // 关键：charTimes 是按 refChars（content 字符串，包括 \n）严格 1:1 的。
+  // 段间用 runningIdx 推进时要 +2（一个 \n\n），段内遇到 \n（行内换行）也 +1。
+  const blocks = pinyinHtml.split('\n\n').filter(p => p.trim());
+  const rubyRe = /<ruby[^>]*>(?:<rb[^>]*>)([^<]+)(?:<\/rb>)(?:<rt[^>]*>[^<]*<\/rt>)?<\/ruby>|([^<]+)/g;
+
+  let runningIdx = 0;  // 段间累加，对应 refChars 中的真实位置（含 \n）
+  return blocks.map((block, blockIdx) => {
+    const blockStart = runningIdx;
+    const lines = block.split('\n');
+    let localIdx = 0;  // 本段内 refChars 真实位置增量（含 \n）
+    const lineHtmls = lines.map((line, lineIdx) => {
+      let out = '';
+      let li = 0;
+      rubyRe.lastIndex = 0;
+      let m;
+      while ((m = rubyRe.exec(line)) !== null) {
+        out += line.slice(li, m.index);
+        li = m.index + m[0].length;
+        if (m[1] != null) {
+          const ct = charTimes[blockStart + localIdx] || { t: 0, d: 0 };
+          localIdx += 1;
+          out += `<span class="lyric-char" data-t="${ct.t}" data-d="${ct.d}">${m[0]}</span>`;
+        } else {
+          const text = m[2];
+          for (const ch of text) {
+            if (isMatchChar(ch)) {
+              const ct = charTimes[blockStart + localIdx] || { t: 0, d: 0 };
+              localIdx += 1;
+              out += `<span class="lyric-char" data-t="${ct.t}" data-d="${ct.d}">${escapeHtml(ch)}</span>`;
+            } else {
+              out += escapeHtml(ch);
+            }
+          }
+        }
+      }
+      out += line.slice(li);
+      // 段内换行 \n 也消耗 refChars 一个位置
+      if (lineIdx < lines.length - 1) localIdx += 1;
+      return out;
+    });
+    // 段尾：block 长度（含内部 \n 但不含末尾 \n）= localIdx
+    // 段间 \n\n: +2
+    runningIdx = blockStart + localIdx + 2;  // +2 是 \n\n
+    return `<p>${lineHtmls.join('<br>')}</p>`;
+  }).join('');
+}
+
+const hasAsr = story.asrWords && story.asrWords.length > 0;
+let normalHtml = '';
+let pinyinHtml = '';
+
+if (hasAsr) {
+  const refChars = Array.from(story.content);
+  const charTimes = alignAsrToChars(refChars, story.asrWords);
+  normalHtml = formatContentWithTokens(story.content, charTimes);
+  pinyinHtml = wrapPinyinWithTokens(story.contentWithPinyin, charTimes);
+} else {
+  // 没有 ASR 数据时的 fallback（与之前相同的纯文本展示）
+  normalHtml = story.content
     .split('\n\n')
     .filter(p => p.trim())
-    .map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`)
+    .map(p => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`)
     .join('');
-};
+  pinyinHtml = story.contentWithPinyin;
+}
 ---
 
 <Layout title={`${story.title} - 巫巫女睡前故事集`} description={story.description}>
   <Header showBack />
-  
+
   <main class="story-page">
-    <article class="story-container">
-      <!-- 封面图 -->
-      <div class="cover-section">
-        <img src={getCoverUrl(story.coverFull || story.coverOriginal || story.cover)} alt={story.title} class="story-cover" />
-      </div>
-      
-      <!-- 标题区域 -->
-      <header class="story-header">
-        <h1 class="story-title story-title-normal">「{story.title}」</h1>
-        <h1 class="story-title story-title-pinyin" style="display: none;" set:html={`「${story.titleWithPinyin || story.title}」`} />
-        <div class="story-meta">
-          {story.duration && (
-            <span class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v6l4 2"/>
-              </svg>
-              约 {story.duration}
-            </span>
-          )}
-          {story.date && (
-            <span class="meta-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                <line x1="16" y1="2" x2="16" y2="6"/>
-                <line x1="8" y1="2" x2="8" y2="6"/>
-                <line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-              {story.date}
-            </span>
-          )}
+    <a
+      href={baseUrl && baseUrl !== '/' ? `${baseUrl}/` : '/'}
+      class="back-link"
+      aria-label="返回首页"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+        <path d="M19 12H5M11 6l-6 6 6 6"/>
+      </svg>
+      <span>返回首页</span>
+    </a>
+
+    <div class="story-layout">
+      <aside class="story-aside">
+        <div class="story-cover">
+          <img
+            src={getCoverUrl(story.coverFull || story.coverOriginal || story.cover)}
+            alt={story.title}
+            loading="eager"
+          />
         </div>
-      </header>
-      
-      <!-- 音频播放器 -->
-      <div class="audio-section">
-        <AudioPlayer src={story.audio} title={story.title} />
-      </div>
-      
-      <!-- 故事正文 -->
-      <div class="story-content story-content-normal" set:html={formatContent(story.content)} />
-      <div class="story-content story-content-pinyin" style="display: none;" set:html={formatContent(story.contentWithPinyin || story.content)} />
-      
-      <!-- 分页导航 -->
-      <nav class="story-nav">
-        {prevStory ? (
-          <a href={baseUrl && baseUrl !== '/' ? `${baseUrl}/story/${prevStory.id}` : `/story/${prevStory.id}`} class="nav-link prev">
-            <span class="nav-label">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M15 18l-6-6 6-6"/>
-              </svg>
-              上一篇
-            </span>
-            <span class="nav-title">{prevStory.title}</span>
-          </a>
-        ) : (
-          <div></div>
+        <div class="story-meta">
+          <h1 class="story-title-normal">{story.title}</h1>
+          <h1 class="story-title-pinyin" style="display: none;" set:html={`「${story.titleWithPinyin}」`} />
+          <div class="meta-row">
+            {story.duration && (
+              <span class="meta-item">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+                约 {story.duration}
+              </span>
+            )}
+          </div>
+        </div>
+        <div class="story-player">
+          <AudioPlayer src={story.audio} title={story.title} />
+        </div>
+      </aside>
+
+      <article class="story-body" id="story-body">
+        <div class="story-content story-content-normal" set:html={normalHtml} />
+        <div class="story-content story-content-pinyin" style="display: none;" set:html={pinyinHtml} />
+        {!hasAsr && (
+          <p class="no-asr-hint">⏳ 这个故事还没生成字高亮数据（需要先跑 ASR）</p>
         )}
-        
-        {nextStory ? (
-          <a href={baseUrl && baseUrl !== '/' ? `${baseUrl}/story/${nextStory.id}` : `/story/${nextStory.id}`} class="nav-link next">
-            <span class="nav-label">
-              下一篇
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 18l6-6-6-6"/>
-              </svg>
-            </span>
-            <span class="nav-title">{nextStory.title}</span>
-          </a>
-        ) : (
-          <div></div>
-        )}
-      </nav>
-    </article>
+      </article>
+    </div>
+
+    <nav class="story-nav">
+      {prevStory ? (
+        <a
+          href={baseUrl && baseUrl !== '/' ? `${baseUrl}/story/${prevStory.id}` : `/story/${prevStory.id}`}
+          class="nav-link prev"
+        >
+          <span class="nav-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+            上一篇
+          </span>
+          <span class="nav-title">{prevStory.title}</span>
+        </a>
+      ) : (
+        <div></div>
+      )}
+
+      {nextStory ? (
+        <a
+          href={baseUrl && baseUrl !== '/' ? `${baseUrl}/story/${nextStory.id}` : `/story/${nextStory.id}`}
+          class="nav-link next"
+        >
+          <span class="nav-label">
+            下一篇
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </span>
+          <span class="nav-title">{nextStory.title}</span>
+        </a>
+      ) : (
+        <div></div>
+      )}
+    </nav>
   </main>
-  
+
   <footer class="footer">
     <div class="footer-content">
       <p class="footer-quote">「晚安，好梦。」</p>
       <p class="footer-copy">© 2026 巫巫女睡前故事集 · 江乐</p>
-      <a href="https://github.com/naokij/wuwunv-story" target="_blank" rel="noopener" class="github-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-        </svg>
-        GitHub
-      </a>
     </div>
   </footer>
 </Layout>
 
 <style>
-  .story-page {
-    padding: 1rem 2rem 3rem;
-  }
-  
-  .story-container {
-    max-width: 720px;
-    margin: 0 auto;
-  }
-  
-  .cover-section {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .story-cover {
-    display: block;
-    max-width: 100%;
-    max-height: 500px;
-    height: auto;
-    margin: 0 auto;
-    border-radius: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  }
-  
-  .story-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding-bottom: 2rem;
-    border-bottom: 1px solid var(--color-border);
-  }
-  
-  .story-title {
-    font-size: 1.75rem;
-    font-weight: 600;
-    color: var(--color-text);
-    margin-bottom: 1rem;
-    line-height: 1.4;
-  }
-  
-  .story-meta {
-    display: flex;
+  .back-link {
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 1.5rem;
-    color: var(--color-text);
-    opacity: 0.7;
+    gap: 6px;
+    padding: 0.5rem 0.75rem;
+    margin: 0.5rem 0 1rem;
+    color: var(--color-accent-dark);
     font-size: 0.9rem;
+    border-radius: 20px;
+    transition: background 0.2s;
   }
-  
-  .meta-item {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+  .back-link:hover {
+    background: rgba(184, 169, 201, 0.1);
   }
-  
-  .audio-section {
-    margin-bottom: 2.5rem;
+
+  .story-page {
+    padding: 0 2rem 3rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* 双列布局：左侧 sticky 侧栏 + 右侧正文 */
+  .story-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 2.5rem;
+    align-items: start;  /* 必须 start，sticky 才生效 */
+  }
+
+  .story-aside {
     position: sticky;
     top: 1rem;
-    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: calc(100vh - 1.5rem);
+    overflow-y: auto;
+    scrollbar-width: none;
   }
-  
-  .story-content {
-    font-size: 1.1rem;
-    line-height: 2;
+  .story-aside::-webkit-scrollbar { display: none; }
+
+  .story-cover {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 18px;
+    overflow: hidden;
+    background: var(--color-card);
+    box-shadow: 0 8px 24px rgba(74, 74, 90, 0.12);
+    flex-shrink: 0;
+  }
+  .story-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .story-meta {
+    padding: 0 0.25rem;
+  }
+
+  .story-title-normal,
+  .story-title-pinyin {
+    font-size: 1.4rem;
+    font-weight: 600;
     color: var(--color-text);
+    line-height: 1.4;
+    margin: 0 0 0.5rem;
   }
-  
-  .story-content :global(p) {
-    margin-bottom: 1.5em;
+  .story-title-pinyin {
+    font-size: 1.2rem;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 1rem;
+    color: var(--color-text);
+    opacity: 0.7;
+    font-size: 0.85rem;
+  }
+  .meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .story-player {
+    background: var(--color-card);
+    border-radius: 16px;
+    border: 1px solid rgba(184, 169, 201, 0.18);
+    box-shadow: 0 2px 8px rgba(74, 74, 90, 0.04);
+  }
+
+  /* 正文 */
+  .story-body {
+    min-width: 0;  /* grid item 防止溢出 */
+  }
+  .story-content {
+    font-size: 1.15rem;
+    line-height: 2.1;
+    color: var(--color-text);
+    padding-bottom: 4rem;
+  }
+  /* Astro 5 scoped CSS：嵌套 :global() 会被忽略，必须用 :global(.cls x) */
+  :global(.story-content p) {
+    margin-bottom: 1.6em;
     text-indent: 2em;
   }
-  
-  .story-content :global(p:first-of-type) {
+  :global(.story-content p:first-of-type) {
     text-indent: 0;
   }
-  
-  .story-content :global(p:first-of-type::before) {
+  :global(.story-content p:first-of-type::before) {
     content: "";
     display: inline-block;
     width: 2em;
   }
-  
-  /* 统一普通内容和拼音内容的字体大小 */
-  .story-content-normal :global(p) {
-    font-size: 1.15rem;
-    line-height: 2;
+
+  /* 字级 token 样式 — 用 inline + box-decoration-break 保留 padding/background
+     避免 inline-block 在长 inline 流中触发 "forced min-content width" 把后续字挤宽 */
+  :global(.story-content .lyric-char) {
+    display: inline;
+    padding: 1px 2px;
+    border-radius: 3px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+    transition: background-color 0.15s ease;
   }
-  
+  :global(.story-content .lyric-char.is-active) {
+    background: linear-gradient(180deg,
+      rgba(255, 220, 150, 0.45),
+      rgba(255, 180, 130, 0.6));
+    color: var(--color-accent-dark);
+    font-weight: 600;
+    transition: none;
+  }
+
+  .no-asr-hint {
+    margin-top: 2rem;
+    padding: 1rem;
+    text-align: center;
+    background: rgba(184, 169, 201, 0.08);
+    border-radius: 12px;
+    color: var(--color-text);
+    opacity: 0.6;
+    font-size: 0.9rem;
+  }
+
+  /* 上下篇导航 */
   .story-nav {
     display: flex;
     justify-content: space-between;
     gap: 1rem;
-    margin-top: 4rem;
+    margin-top: 3rem;
     padding-top: 2rem;
     border-top: 1px solid var(--color-border);
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
   }
-  
   .nav-link {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    padding: 1rem 1.5rem;
+    padding: 0.75rem 1.25rem;
     background: var(--color-card);
     border-radius: 12px;
     transition: all 0.2s;
     max-width: 280px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
-  
   .nav-link:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
-  
-  .nav-link.prev {
-    align-items: flex-start;
-  }
-  
-  .nav-link.next {
-    align-items: flex-end;
-    text-align: right;
-  }
-  
+  .nav-link.prev { align-items: flex-start; }
+  .nav-link.next { align-items: flex-end; text-align: right; }
   .nav-label {
     display: flex;
     align-items: center;
     gap: 0.4rem;
     font-size: 0.85rem;
-    color: var(--color-accent);
+    color: var(--color-accent-dark);
   }
-  
   .nav-title {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     color: var(--color-text);
   }
-  
+
   .footer {
     padding: 3rem 2rem;
     text-align: center;
     border-top: 1px solid var(--color-border);
   }
-  
-  .footer-content {
-    max-width: 600px;
-    margin: 0 auto;
-  }
-  
+  .footer-content { max-width: 600px; margin: 0 auto; }
   .footer-quote {
     font-size: 1.1rem;
-    color: var(--color-accent);
+    color: var(--color-accent-dark);
     margin-bottom: 1rem;
     font-style: italic;
   }
-  
   .footer-copy {
     font-size: 0.85rem;
     color: var(--color-text);
     opacity: 0.6;
-    margin-bottom: 0.75rem;
   }
-  
-  .github-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.85rem;
-    color: var(--color-accent);
-    transition: opacity 0.2s;
+
+  /* 平板 */
+  @media (max-width: 1024px) {
+    .story-layout { grid-template-columns: 280px 1fr; gap: 1.5rem; }
+    .story-cover { border-radius: 14px; }
   }
-  
-  .github-link:hover {
-    opacity: 0.8;
-  }
-  
-  @media (max-width: 640px) {
-    .story-page {
-      padding: 0.5rem 1rem 2rem;
+
+  /* 移动端：单列 + aside 整体 sticky */
+  @media (max-width: 720px) {
+    .story-page { padding: 0 0.75rem 2rem; }
+    .back-link { margin-bottom: 0.5rem; }
+
+    .story-layout {
+      grid-template-columns: 1fr;
+      gap: 0;
     }
-    
-    .story-title {
-      font-size: 1.5rem;
+
+    .story-aside {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      max-height: none;
+      overflow: visible;
+      background: var(--color-bg);
+      padding: 0.5rem 0 0.75rem;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 1.5rem;
     }
-    
+
+    .story-cover {
+      width: 70%;
+      max-width: 280px;
+      margin: 0 auto;
+      aspect-ratio: 1 / 1;
+      box-shadow: 0 4px 12px rgba(74, 74, 90, 0.1);
+    }
+
     .story-meta {
-      flex-direction: column;
-      gap: 0.5rem;
+      text-align: center;
+      padding: 0 0.5rem;
     }
-    
+    .story-title-normal,
+    .story-title-pinyin {
+      font-size: 1.15rem;
+      margin-top: 0.5rem;
+    }
+    .meta-row { justify-content: center; font-size: 0.8rem; }
+
     .story-content {
       font-size: 1.05rem;
-      line-height: 1.9;
+      line-height: 2;
     }
-    
+    :global(.story-content .lyric-char.is-active) {
+      box-shadow: 0 0 0 1px rgba(184, 169, 201, 0.5);
+    }
+
     .story-nav {
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.75rem;
     }
-    
     .nav-link {
       max-width: 100%;
     }
-    
     .nav-link.next {
       align-items: flex-start;
       text-align: left;
     }
-    
-    .audio-section {
-      position: static;
-    }
   }
 </style>
+
+<script>
+  // 字高亮 + 滚动跟随
+  // 完全照搬参考项目 faries-vs-witch 的实现：
+  // - rAF 16ms 驱动（比 timeupdate 4Hz 精度高一个量级，杜绝跳字）
+  // - 二分查找当前 t 对应的字
+  // - offsetTop 不触发 reflow（避免 iPad 卡顿）
+  // - 1 秒节流 + 桌面/移动端不同滚动策略
+  // - visibilitychange 暂停 rAF 省电
+  (function () {
+    const body = document.getElementById('story-body');
+    if (!body) return;
+
+    const normalEl = body.querySelector('.story-content-normal');
+    const pinyinEl = body.querySelector('.story-content-pinyin');
+    if (!normalEl) return;
+
+    // AudioPlayer 把 audio 实例挂在 .audio-player.__audio 上
+    // 但 AudioPlayer 是 DOMContentLoaded 才初始化，详情页 script 是 module (defer)，
+    // 所以这里读 __audio 可能是 undefined。统一在 getAudio() 里动态拿。
+    let audio: HTMLAudioElement | null = null;
+
+    // 找当前可见的内容容器（拼音模式 / 普通模式）
+    function activeContent() {
+      if (pinyinEl && pinyinEl.style.display !== 'none') return pinyinEl;
+      return normalEl;
+    }
+
+    // 从当前可见内容构建 wordEls 数组
+    let wordEls: Array<{ el: HTMLElement; start: number; end: number }> = buildWordEls(activeContent());
+
+    function buildWordEls(root: Element) {
+      const arr: Array<{ el: HTMLElement; start: number; end: number }> = [];
+      root.querySelectorAll('.lyric-char').forEach(el => {
+        const t = parseFloat((el as HTMLElement).dataset.t || '0');
+        const d = parseFloat((el as HTMLElement).dataset.d || '0');
+        if (isFinite(t) && isFinite(d)) arr.push({ el: el as HTMLElement, start: t, end: d });
+      });
+      return arr;
+    }
+
+    if (wordEls.length === 0) return;  // 没有 ASR 数据，直接退出
+
+    // 拼音切换时重建 wordEls（两套都预包装，仅切换引用）
+    window.addEventListener('pinyin-mode-changed', () => {
+      wordEls = buildWordEls(activeContent());
+      activeIdx = -1;  // 重置高亮
+      // 清掉所有 is-active
+      wordEls.forEach(w => w.el.classList.remove('is-active'));
+    });
+
+    // 二分查找（注意：t >= w.end 才前进，避免停在已结束字）
+    function findWordIdx(t: number): number {
+      let lo = 0, hi = wordEls.length - 1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        const w = wordEls[mid];
+        if (t < w.start) hi = mid - 1;
+        else if (t >= w.end) lo = mid + 1;
+        else return mid;
+      }
+      return -1;
+    }
+
+    let activeIdx = -1;
+    let lastScrollTime = 0;
+    let isMobile = window.innerWidth < 720;
+    let vh = window.innerHeight;
+    let asideBottom = 0;
+    const asideEl = document.querySelector('.story-aside');
+
+    function refreshBounds() {
+      isMobile = window.innerWidth < 720;
+      vh = window.innerHeight;
+      asideBottom = asideEl ? asideEl.getBoundingClientRect().bottom : 56;
+    }
+    refreshBounds();
+    window.addEventListener('resize', refreshBounds);
+
+    function highlight(t: number) {
+      if (wordEls.length === 0) return;
+      const idx = findWordIdx(t);
+      if (idx === activeIdx) return;
+      if (activeIdx >= 0 && wordEls[activeIdx]) {
+        wordEls[activeIdx].el.classList.remove('is-active');
+      }
+      if (idx >= 0) {
+        wordEls[idx].el.classList.add('is-active');
+        // 滚动跟随：1 秒节流 + offsetTop 不触发 reflow
+        const now = Date.now();
+        if (now - lastScrollTime > 1000) {
+          const el = wordEls[idx].el;
+          const elTop = el.offsetTop;
+          const viewTop = window.scrollY;
+          if (isMobile) {
+            const target = Math.min(asideBottom + 24, vh - 120);
+            const elViewportTop = elTop - viewTop;
+            if (Math.abs(elViewportTop - target) > 30) {
+              lastScrollTime = now;
+              window.scrollTo({ top: elTop - target, behavior: 'auto' });
+            }
+          } else {
+            const margin = 120;
+            const elViewportTop = elTop - viewTop;
+            const elViewportBottom = elViewportTop + (el.offsetHeight || 24);
+            if (elViewportTop < margin || elViewportBottom > vh - margin) {
+              lastScrollTime = now;
+              window.scrollTo({ top: elTop - vh * 0.5, behavior: 'auto' });
+            }
+          }
+        }
+      }
+      activeIdx = idx;
+    }
+
+    // rAF 驱动（每帧 ~16ms，远比 timeupdate 4Hz 精确）
+    let rafId: number | null = null;
+    function getAudio(): HTMLAudioElement | null {
+      const playerWrap = document.querySelector('.audio-player');
+      return playerWrap ? (playerWrap as any).__audio as HTMLAudioElement | undefined ?? null : null;
+    }
+    function highlightLoop() {
+      const a = getAudio();
+      if (a && !a.paused && !a.ended && a.duration) {
+        const t = a.currentTime;
+        highlight(t);
+      }
+      rafId = requestAnimationFrame(highlightLoop);
+    }
+    function startHighlight() { if (rafId == null) rafId = requestAnimationFrame(highlightLoop); }
+    function stopHighlight() { if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } }
+
+    // 监听播放状态
+    document.addEventListener('audio-state', (e: Event) => {
+      const ce = e as CustomEvent<{ state: string }>;
+      if (ce.detail.state === 'playing') startHighlight();
+      else stopHighlight();
+    });
+
+    // 用户拖动进度条 → 立即跳到对应字（不节流）
+    document.addEventListener('audio-time', (e: Event) => {
+      const ce = e as CustomEvent<{ t: number; duration: number; seek?: boolean }>;
+      if (ce.detail.seek) {
+        if (wordEls.length === 0) return;
+        const idx = findWordIdx(ce.detail.t);
+        if (idx < 0) return;
+        // 直接高亮（不等下次 rAF）
+        if (activeIdx >= 0 && wordEls[activeIdx]) {
+          wordEls[activeIdx].el.classList.remove('is-active');
+        }
+        wordEls[idx].el.classList.add('is-active');
+        activeIdx = idx;
+        // 强制滚动（不节流）
+        const el = wordEls[idx].el;
+        const target = isMobile
+          ? Math.min(asideBottom + 24, vh - 120)
+          : vh * 0.5;
+        window.scrollTo({ top: el.offsetTop - target, behavior: 'auto' });
+        lastScrollTime = Date.now();
+      }
+    });
+
+    // 页面切到后台暂停 rAF 省电
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stopHighlight();
+      else {
+        const a = getAudio();
+        if (a && !a.paused) startHighlight();
+      }
+    });
+
+    // 如果当前已在播放（页面刷新时），启动 rAF
+    const initAudio = getAudio();
+    if (initAudio && !initAudio.paused && !initAudio.ended) startHighlight();
+  })();
+</script>
