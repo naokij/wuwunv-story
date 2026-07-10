@@ -197,6 +197,17 @@ async function generateStories() {
     const pinyinContent = generatePinyinContent(cleanContent);
     const titleWithPinyin = generatePinyinContent(title);
 
+    // 可选：读取 ASR 对齐数据用于字高亮
+    const asrPath = path.resolve(__dirname, `../data/asr/${id}.aligned.json`);
+    let asrWords = null;
+    try {
+      asrWords = JSON.parse(await fs.readFile(asrPath, 'utf-8'));
+      if (i < 3) console.log(`  ↳ ${id} asr=${asrWords.length} 字`);
+    } catch (e) {
+      // 没有 ASR 数据的故事直接跳过此字段（播放器仍正常工作，只是无字高亮）
+      if (i < 3) console.log(`  ↳ ${id} 无 ASR: ${e.message.split('\n')[0]}`);
+    }
+
     stories.push({
       id,
       title,
@@ -210,6 +221,7 @@ async function generateStories() {
       audio: `/audio/${audioFile}`,
       content: cleanContent,
       contentWithPinyin: pinyinContent,
+      asrWords,
     });
 
     processed++;
