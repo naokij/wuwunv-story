@@ -154,12 +154,11 @@ const basePath = baseUrl && baseUrl !== '/' ? baseUrl : '';
         const btn = document.getElementById('global-pinyin-btn');
         const btnText = document.getElementById('pinyin-btn-text');
         
-        // 获取保存的状态（默认为 true）
+        // 获取保存的状态（默认开启拼音，除非用户明确关闭过）
         function getPinyinState() {
           const value = localStorage.getItem(STORAGE_KEY);
-          // 如果从未设置过，返回 true（默认开启）
-          if (value === null) return true;
-          return value === 'true';
+          if (value !== null) return value === 'true';
+          return true;
         }
         
         // 保存状态
@@ -188,7 +187,10 @@ const basePath = baseUrl && baseUrl !== '/' ? baseUrl : '';
           
           cardNormalTitles.forEach(el => el.style.display = enabled ? 'none' : 'block');
           cardPinyinTitles.forEach(el => el.style.display = enabled ? 'block' : 'none');
-          
+
+          // 通知字高亮脚本（故事页订阅以重建 wordEls）
+          window.dispatchEvent(new Event('pinyin-mode-changed'));
+
           // 更新按钮状态
           if (btn) {
             btn.classList.toggle('active', enabled);

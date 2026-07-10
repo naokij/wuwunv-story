@@ -163,6 +163,8 @@ const audioSrc = src.startsWith('/') ? src : `${baseUrl}/${src}`;
       if (!src) return;
       
       const audio = new Audio(src);
+      // 暴露给外部脚本（故事详情页的字高亮 + 滚动跟随需要读 audio.currentTime）
+      (player as any).__audio = audio;
       const playBtn = player.querySelector('.play-btn');
       const playIcon = player.querySelector('.play-icon');
       const pauseIcon = player.querySelector('.pause-icon');
@@ -185,8 +187,12 @@ const audioSrc = src.startsWith('/') ? src : `${baseUrl}/${src}`;
       audio.addEventListener('loadedmetadata', () => {
         durationEl.textContent = formatTime(audio.duration);
         progressInput.max = String(audio.duration);
+        player.dispatchEvent(new CustomEvent('audio-ready', {
+          bubbles: true,
+          detail: { duration: audio.duration }
+        }));
       });
-      
+
       // 播放/暂停
       playBtn.addEventListener('click', () => {
         if (isPlaying) {
@@ -202,24 +208,26 @@ const audioSrc = src.startsWith('/') ? src : `${baseUrl}/${src}`;
           audio.play();
         }
       });
-      
+
       // 监听自定义暂停事件
       playBtn.addEventListener('pause-audio', () => {
         audio.pause();
       });
-      
+
       audio.addEventListener('play', () => {
         isPlaying = true;
         playIcon.style.display = 'none';
         pauseIcon.style.display = 'block';
+        player.dispatchEvent(new CustomEvent('audio-state', { bubbles: true, detail: { state: 'playing' } }));
       });
-      
+
       audio.addEventListener('pause', () => {
         isPlaying = false;
         playIcon.style.display = 'block';
         pauseIcon.style.display = 'none';
+        player.dispatchEvent(new CustomEvent('audio-state', { bubbles: true, detail: { state: 'paused' } }));
       });
-      
+
       audio.addEventListener('ended', () => {
         isPlaying = false;
         playIcon.style.display = 'block';
@@ -227,14 +235,19 @@ const audioSrc = src.startsWith('/') ? src : `${baseUrl}/${src}`;
         progressFill.style.width = '0%';
         progressInput.value = '0';
         currentTimeEl.textContent = '00:00';
+        player.dispatchEvent(new CustomEvent('audio-state', { bubbles: true, detail: { state: 'ended' } }));
       });
-      
-      // 进度更新
+
+      // 进度更新（同时发 audio-time 给字高亮 JS 订阅）
       audio.addEventListener('timeupdate', () => {
         const percent = (audio.currentTime / audio.duration) * 100;
         progressFill.style.width = `${percent}%`;
         progressInput.value = String(audio.currentTime);
         currentTimeEl.textContent = formatTime(audio.currentTime);
+        player.dispatchEvent(new CustomEvent('audio-time', {
+          bubbles: true,
+          detail: { t: audio.currentTime, duration: audio.duration }
+        }));
       });
       
       // 拖动进度条
@@ -244,6 +257,11 @@ const audioSrc = src.startsWith('/') ? src : `${baseUrl}/${src}`;
         audio.currentTime = time;
         const percent = (time / audio.duration) * 100;
         progressFill.style.width = `${percent}%`;
+        // seek 后立即派发 audio-time，让高亮立刻跟随
+        player.dispatchEvent(new CustomEvent('audio-time', {
+          bubbles: true,
+          detail: { t: time, duration: audio.duration, seek: true }
+        }));
       });
     });
   });
